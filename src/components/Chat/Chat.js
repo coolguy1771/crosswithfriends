@@ -160,7 +160,7 @@ export default class Chat extends Component {
     if (!this.props.mobile) return;
     return (
       <Flex className="toolbar--mobile" vAlignContent="center">
-        <Link to="/">Down for a Cross</Link> {this.renderGameButton()}
+        <Link to="/">Cross with Friends</Link> {this.renderGameButton()}
       </Flex>
     );
   }

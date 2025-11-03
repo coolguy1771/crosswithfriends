@@ -33,7 +33,7 @@ If you notice a bug or have a feature request, feel free to open an issue.
 
 ### Contributing
 
-Down for a Cross is open to contributions from developers of any level or experience.
+Cross with Friends is open to contributions from developers of any level or experience.
 See the `Getting Started` section for instructions on setting up.
 
 Join the [discord](https://discord.gg/KjPHFw8) for discussion.

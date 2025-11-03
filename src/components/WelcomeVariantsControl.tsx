@@ -16,7 +16,7 @@ export const WelcomeVariantsControl: React.FC<{
       content: (
         <div className="swal-text swal-text--no-margin">
           <p>
-            Fencing is a variant of Down for a Cross where you can race to complete a crossword against
+            Fencing is a variant of Cross with Friends where you can race to complete a crossword against
             friends in real time.
             <br />
             <br />

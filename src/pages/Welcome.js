@@ -298,7 +298,7 @@ export default class Welcome extends Component {
     return (
       <Flex className={classnames('welcome', {mobile: this.mobile})} column grow={1}>
         <Helmet>
-          <title>Down for a Cross</title>
+          <title>Cross with Friends</title>
         </Helmet>
         <div className="welcome--nav" style={this.navStyle}>
           <Nav

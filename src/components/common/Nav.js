@@ -52,18 +52,18 @@ function showInfo() {
     content: (
       <div className="swal-text swal-text--no-margin">
         <p>
-          Down for a Cross is an online website for sharing crosswords and playing collaboratively with
+          Cross with Friends is an online website for sharing crosswords and playing collaboratively with
           friends in real time. Join the&nbsp;
-          <a href="https://discord.gg/KjPHFw8" target="_blank" rel="noreferrer">
+          <a href="https://discord.gg/cncyyVE8QM" target="_blank" rel="noreferrer">
             community Discord
           </a>
           &nbsp;for more discussion.
         </p>
         <hr className="info--hr" />
         <p>
-          Down for a Cross is open to contributions from developers of any level or experience. For more
+          Cross with Friends is open to contributions from developers of any level or experience. For more
           information or to report any issues, check out the project on&nbsp;
-          <a href="https://github.com/downforacross/downforacross.com" target="_blank" rel="noreferrer">
+          <a href="https://github.com/ScaleOvenStove/crosswithfriends" target="_blank" rel="noreferrer">
             GitHub
           </a>
           .
@@ -93,7 +93,7 @@ export default function Nav({hidden, v2, canLogin, mobile, linkStyle, divRef}) {
   return (
     <div className={classnames('nav', {mobile})} ref={divRef}>
       <div className="nav--left" style={linkStyle}>
-        <Link to={fencing ? '/fencing' : '/'}>Down for a Cross</Link>
+        <Link to={fencing ? '/fencing' : '/'}>Cross with Friends</Link>
       </div>
       <div className="nav--right">
         <div

@@ -60,7 +60,7 @@ export default class Compose extends Component {
       <Flex column className="compositions">
         <Nav v2 composeEnabled />
         <Helmet>
-          <title>Down for Across: Compose</title>
+          <title>Cross with Friends: Compose</title>
         </Helmet>
         <Flex shrink={0} hAlignContent="center">
           Limit: {limit}
