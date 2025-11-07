@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { NextFunction } from 'express';
 import morgan from 'morgan';
 import bodyParser from 'body-parser';
 
@@ -24,6 +24,11 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   app.use(morgan('tiny'));
 }
+
+app.use((err: Error, req: any, res: any, next: NextFunction) => {
+  console.error("error serving request", req, err)
+  res.status(500).send('Unexpected error', err)
+})
 
 app.use('/api', apiRouter);
 
