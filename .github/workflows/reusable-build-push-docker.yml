@@ -107,4 +107,3 @@ jobs:
           echo "image-digest=${{ steps.push.outputs.digest }}" >> $GITHUB_OUTPUT
           echo "image-tags=${{ inputs.tags }}" >> $GITHUB_OUTPUT
         id: output
-

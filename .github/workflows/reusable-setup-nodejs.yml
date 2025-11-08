@@ -41,4 +41,3 @@ jobs:
       - name: Install dependencies
         if: inputs.install-dependencies
         run: pnpm install --frozen-lockfile
-

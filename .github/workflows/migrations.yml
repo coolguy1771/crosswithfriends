@@ -70,7 +70,7 @@ jobs:
         run: |
           echo "Validating migration file format..."
           MIGRATION_DIR="./sql/migrations"
-          
+
           # Check that all migration files follow the naming pattern: {index}_{name}.sql
           for file in "$MIGRATION_DIR"/*.sql; do
             if [ -f "$file" ]; then
@@ -83,7 +83,7 @@ jobs:
               echo "✓ Valid migration file: $filename"
             fi
           done
-          
+
           echo "All migration files follow the correct format."
 
       - name: Test migrations up
@@ -116,7 +116,7 @@ jobs:
         run: |
           echo "Checking SQL syntax in migration files..."
           MIGRATION_DIR="./sql/migrations"
-          
+
           for file in "$MIGRATION_DIR"/*.sql; do
             if [ -f "$file" ]; then
               filename=$(basename "$file")
@@ -139,4 +139,3 @@ jobs:
           echo "✅ Migration files validated" >> $GITHUB_STEP_SUMMARY
           echo "✅ Migrations applied successfully" >> $GITHUB_STEP_SUMMARY
           echo "✅ Database schema updated" >> $GITHUB_STEP_SUMMARY
-

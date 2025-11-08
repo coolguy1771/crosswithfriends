@@ -84,15 +84,15 @@ jobs:
           ENV="${{ needs.determine-environment.outputs.environment }}"
           SHA="${{ github.sha }}"
           SHORT_SHA="${SHA:0:7}"
-          
+
           BACKEND_TAGS="ghcr.io/${{ github.repository }}/backend:${ENV}-${SHORT_SHA}"
-          
+
           if [ "${{ github.ref }}" == "refs/heads/master" ]; then
             BACKEND_TAGS="${BACKEND_TAGS},ghcr.io/${{ github.repository }}/backend:latest,ghcr.io/${{ github.repository }}/backend:production"
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             BACKEND_TAGS="${BACKEND_TAGS},ghcr.io/${{ github.repository }}/backend:staging"
           fi
-          
+
           echo "backend_tags=${BACKEND_TAGS}" >> $GITHUB_OUTPUT
           echo "Generated tags: ${BACKEND_TAGS}"
 
@@ -125,15 +125,15 @@ jobs:
           ENV="${{ needs.determine-environment.outputs.environment }}"
           SHA="${{ github.sha }}"
           SHORT_SHA="${SHA:0:7}"
-          
+
           FRONTEND_TAGS="ghcr.io/${{ github.repository }}/frontend:${ENV}-${SHORT_SHA}"
-          
+
           if [ "${{ github.ref }}" == "refs/heads/master" ]; then
             FRONTEND_TAGS="${FRONTEND_TAGS},ghcr.io/${{ github.repository }}/frontend:latest,ghcr.io/${{ github.repository }}/frontend:production"
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             FRONTEND_TAGS="${FRONTEND_TAGS},ghcr.io/${{ github.repository }}/frontend:staging"
           fi
-          
+
           echo "frontend_tags=${FRONTEND_TAGS}" >> $GITHUB_OUTPUT
           echo "Generated tags: ${FRONTEND_TAGS}"
 
@@ -171,7 +171,7 @@ jobs:
           echo "- Backend: ${{ needs.detect-changes.outputs.backend }}" >> $GITHUB_STEP_SUMMARY
           echo "- Frontend: ${{ needs.detect-changes.outputs.frontend }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ needs.detect-changes.outputs.backend }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "### Backend Image" >> $GITHUB_STEP_SUMMARY
             echo "✅ Built and pushed (linux/amd64, linux/arm64)" >> $GITHUB_STEP_SUMMARY
@@ -179,7 +179,7 @@ jobs:
             echo "### Backend Image" >> $GITHUB_STEP_SUMMARY
             echo "⏭️ Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.detect-changes.outputs.frontend }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "### Frontend Image" >> $GITHUB_STEP_SUMMARY
             echo "✅ Built and pushed (linux/amd64, linux/arm64)" >> $GITHUB_STEP_SUMMARY

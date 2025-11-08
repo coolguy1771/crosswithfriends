@@ -21,6 +21,7 @@
     "test:backend": "pnpm --filter='./packages/backend' test",
     "typecheck": "pnpm --filter='./packages/*' typecheck",
     "lint": "pnpm --filter='./packages/*' lint",
+    "lint:fix": "pnpm --filter='./packages/*' lint:fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "pnpm --filter='./packages/*' clean && rm -rf node_modules",

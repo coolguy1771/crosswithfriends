@@ -92,7 +92,7 @@ export type GameEventType =
 
 /**
  * Base interface for all game events
- * 
+ *
  * All game events follow the event sourcing pattern and include a type,
  * timestamp, and optional user ID for attribution.
  */
@@ -237,7 +237,7 @@ export type GameEvent =
 
 /**
  * Game state derived from events (event sourcing pattern)
- * 
+ *
  * This state is computed by replaying all game events in order.
  */
 export interface GameState {

@@ -73,7 +73,7 @@ export type GridData = CellData[][];
 
 /**
  * PuzzleJson: the json format of puzzles stored in the db (both firebase & postgres)
- * 
+ *
  * Fields are a bit messy & don't correspond perfectly with puzjs formats... see logic in FileUploader.js
  */
 export interface PuzzleJson {
@@ -107,14 +107,14 @@ export interface PuzzleStatsJson {
 
 /**
  * Branded type for cell indices (row * cols + col)
- * 
+ *
  * This provides type safety when working with cell indices in the puzzle grid.
  */
 export type CellIndex = Brand<number, 'CellIndex'>;
 
 /**
  * Converts row and column coordinates to a cell index
- * 
+ *
  * @param r - Row index (0-indexed)
  * @param c - Column index (0-indexed)
  * @param cols - Total number of columns in the grid
@@ -133,7 +133,7 @@ export type CellCoords = {r: number; c: number};
 
 /**
  * Branded types for IDs to prevent mixing different ID types (per technical spec)
- * 
+ *
  * These branded types provide compile-time type safety to prevent accidentally
  * using the wrong type of ID (e.g., passing a GameId where a PuzzleId is expected).
  */

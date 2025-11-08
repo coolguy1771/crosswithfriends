@@ -6,8 +6,7 @@ const env = getEnv();
 
 // Use DATABASE_URL if provided, otherwise construct from individual env vars
 const connectionString =
-  env.DATABASE_URL ??
-  `postgresql://${env.PGUSER}:${env.PGPASSWORD}@${env.PGHOST}:5432/${env.PGDATABASE}`;
+  env.DATABASE_URL ?? `postgresql://${env.PGUSER}:${env.PGPASSWORD}@${env.PGHOST}:5432/${env.PGDATABASE}`;
 
 // Drizzle config following best practices from https://orm.drizzle.team/docs/get-started/postgresql-new
 export default defineConfig({

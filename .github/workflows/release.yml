@@ -29,10 +29,10 @@ jobs:
         id: tags
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          
+
           BACKEND_TAGS="${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:v${VERSION},${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest,${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:production"
           FRONTEND_TAGS="${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:v${VERSION},${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest,${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:production"
-          
+
           echo "backend_tags=${BACKEND_TAGS}" >> $GITHUB_OUTPUT
           echo "frontend_tags=${FRONTEND_TAGS}" >> $GITHUB_OUTPUT
           echo "Generated tags:"
@@ -87,36 +87,36 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
+
           if [ -z "$PREVIOUS_TAG" ]; then
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" HEAD)
           else
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" ${PREVIOUS_TAG}..HEAD)
           fi
-          
+
           NOTES="## Release v${VERSION}
-          
+
           ### Docker Images (Multi-Arch: linux/amd64, linux/arm64)
-          
+
           **Backend:**
           \`\`\`
           ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:v${VERSION}
           ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
           ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:production
           \`\`\`
-          
+
           **Frontend:**
           \`\`\`
           ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:v${VERSION}
           ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
           ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:production
           \`\`\`
-          
+
           ### Changes
-          
+
           ${CHANGELOG}
           "
-          
+
           echo "${NOTES}" > release-notes.md
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "${NOTES}" >> $GITHUB_OUTPUT
@@ -132,4 +132,3 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
