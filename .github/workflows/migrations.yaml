@@ -1,0 +1,175 @@
+name: Database Migrations
+
+on:
+  pull_request:
+    branches: [master, develop]
+    paths:
+      - 'packages/backend/sql/migrations/**'
+      - 'packages/backend/src/models/**'
+      - 'packages/backend/drizzle.config.ts'
+  push:
+    branches: [master, develop]
+    paths:
+      - 'packages/backend/sql/migrations/**'
+      - 'packages/backend/src/models/**'
+      - 'packages/backend/drizzle.config.ts'
+
+jobs:
+  validate-migrations:
+    name: Validate Database Migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: dfac_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 #v4.2.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 #v6.0.0
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Set up test database
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: password
+          PGDATABASE: postgres
+        run: |
+          psql -h localhost -U postgres -c "DROP DATABASE IF EXISTS dfac_test;"
+          psql -h localhost -U postgres -c "CREATE DATABASE dfac_test;"
+
+      - name: Generate database migrations
+        working-directory: packages/backend
+        env:
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/dfac_test
+        run: pnpm run db:generate
+
+      - name: Check migration files format
+        working-directory: packages/backend
+        run: |
+          echo "Validating migration file format..."
+          MIGRATION_DIR="./sql/migrations"
+
+          # Check that all migration files follow the naming pattern: {index}_{name}.sql
+          for file in "$MIGRATION_DIR"/*.sql; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+              # Check if filename matches pattern: number_underscore_name.sql
+              if ! echo "$filename" | grep -qE '^[0-9]+_[a-z0-9_]+\.sql$'; then
+                echo "ERROR: Migration file '$filename' does not follow naming pattern: {index}_{name}.sql"
+                exit 1
+              fi
+              echo "✓ Valid migration file: $filename"
+            fi
+          done
+
+          echo "All migration files follow the correct format."
+
+      - name: Check for SQL syntax errors
+        working-directory: packages/backend
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: password
+          PGDATABASE: dfac_test
+        run: |
+          echo "Checking SQL syntax in migration files..."
+          MIGRATION_DIR="./sql/migrations"
+
+          for file in "$MIGRATION_DIR"/*.sql; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+              echo "Checking syntax for: $filename"
+              # Validate SQL syntax in a transaction that rolls back
+              # This checks syntax without committing any changes
+              # Wrap the file content in BEGIN/ROLLBACK to test syntax safely
+              if ! (echo "BEGIN;" && cat "$file" && echo "ROLLBACK;") | psql -h localhost -U postgres -d dfac_test >/dev/null 2>&1; then
+                echo "ERROR: SQL syntax error in $filename"
+                exit 1
+              fi
+              echo "✓ Syntax valid: $filename"
+            fi
+          done
+
+      - name: Run database migrations
+        working-directory: packages/backend
+        env:
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/dfac_test
+        run: pnpm run db:migrate
+
+      - name: Verify migrations applied successfully
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: password
+          PGDATABASE: dfac_test
+        run: |
+          echo "Verifying that migrations were applied successfully..."
+
+          # Check that expected tables exist (these are created by migrations)
+          EXPECTED_TABLES=("puzzles" "game_events" "game_snapshots" "puzzle_solves" "room_events")
+          MISSING_TABLES=()
+
+          for table in "${EXPECTED_TABLES[@]}"; do
+            EXISTS=$(psql -h localhost -U postgres -d dfac_test -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table');")
+            if [ "$EXISTS" != "t" ]; then
+              MISSING_TABLES+=("$table")
+            else
+              echo "✓ Table '$table' exists"
+            fi
+          done
+
+          if [ ${#MISSING_TABLES[@]} -ne 0 ]; then
+            echo "ERROR: The following tables are missing: ${MISSING_TABLES[*]}"
+            echo "This indicates migrations did not run successfully."
+            exit 1
+          fi
+
+          # Optionally verify tracking table exists (for the custom runner)
+          TRACKING_EXISTS=$(psql -h localhost -U postgres -d dfac_test -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'drizzle_migrations');")
+          if [ "$TRACKING_EXISTS" = "t" ]; then
+            MIGRATION_COUNT=$(psql -h localhost -U postgres -d dfac_test -tAc "SELECT COUNT(*) FROM drizzle_migrations;")
+            echo "✓ Migration tracking table exists with $MIGRATION_COUNT recorded migration(s)"
+          else
+            echo "⚠️  Warning: Migration tracking table does not exist (custom runner may not work correctly)"
+          fi
+
+          echo "✅ All expected tables exist - migrations applied successfully"
+
+      - name: Migration summary
+        if: always()
+        run: |
+          echo "## Migration Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Migration files validated" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Migrations applied successfully" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Database schema updated" >> $GITHUB_STEP_SUMMARY

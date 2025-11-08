@@ -1,0 +1,194 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ${{ github.repository }}/backend
+  FRONTEND_IMAGE: ${{ github.repository }}/frontend
+
+jobs:
+  determine-environment:
+    name: Determine Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - name: Set environment based on branch or input
+        id: set-env
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+          fi
+
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'packages/backend/**'
+              - 'packages/shared/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+            frontend:
+              - 'packages/frontend/**'
+              - 'packages/shared/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+
+  generate-backend-tags:
+    name: Generate Backend Tags
+    runs-on: ubuntu-latest
+    needs: [determine-environment]
+    outputs:
+      tags: ${{ steps.tags.outputs.backend_tags }}
+    steps:
+      - name: Generate image tags
+        id: tags
+        run: |
+          ENV="${{ needs.determine-environment.outputs.environment }}"
+          SHA="${{ github.sha }}"
+          SHORT_SHA="${SHA:0:7}"
+
+          BACKEND_TAGS="ghcr.io/${{ github.repository }}/backend:${ENV}-${SHORT_SHA}"
+
+          if [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            BACKEND_TAGS="${BACKEND_TAGS},ghcr.io/${{ github.repository }}/backend:latest,ghcr.io/${{ github.repository }}/backend:production"
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            BACKEND_TAGS="${BACKEND_TAGS},ghcr.io/${{ github.repository }}/backend:staging"
+          fi
+
+          echo "backend_tags=${BACKEND_TAGS}" >> $GITHUB_OUTPUT
+          echo "Generated tags: ${BACKEND_TAGS}"
+
+  build-and-push-backend:
+    name: Build and Push Backend Image
+    needs: [determine-environment, detect-changes, generate-backend-tags]
+    if: needs.detect-changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/reusable-build-push-docker.yaml
+    with:
+      service: backend
+      dockerfile: ./packages/backend/Dockerfile
+      target: production
+      image-name: ghcr.io/${{ github.repository }}/backend
+      tags: ${{ needs.generate-backend-tags.outputs.tags }}
+      environment: ${{ needs.determine-environment.outputs.environment }}
+      cache-scope: backend-${{ needs.determine-environment.outputs.environment }}
+      build-args: |
+        ENVIRONMENT=${{ needs.determine-environment.outputs.environment }}
+
+  generate-frontend-tags:
+    name: Generate Frontend Tags
+    runs-on: ubuntu-latest
+    needs: [determine-environment]
+    outputs:
+      tags: ${{ steps.tags.outputs.frontend_tags }}
+    steps:
+      - name: Generate image tags
+        id: tags
+        run: |
+          ENV="${{ needs.determine-environment.outputs.environment }}"
+          SHA="${{ github.sha }}"
+          SHORT_SHA="${SHA:0:7}"
+
+          FRONTEND_TAGS="ghcr.io/${{ github.repository }}/frontend:${ENV}-${SHORT_SHA}"
+
+          if [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            FRONTEND_TAGS="${FRONTEND_TAGS},ghcr.io/${{ github.repository }}/frontend:latest,ghcr.io/${{ github.repository }}/frontend:production"
+          elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+            FRONTEND_TAGS="${FRONTEND_TAGS},ghcr.io/${{ github.repository }}/frontend:staging"
+          fi
+
+          echo "frontend_tags=${FRONTEND_TAGS}" >> $GITHUB_OUTPUT
+          echo "Generated tags: ${FRONTEND_TAGS}"
+
+  build-and-push-frontend:
+    name: Build and Push Frontend Image
+    needs: [determine-environment, detect-changes, generate-frontend-tags]
+    if: needs.detect-changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/reusable-build-push-docker.yaml
+    with:
+      service: frontend
+      dockerfile: ./packages/frontend/Dockerfile
+      target: nginx
+      image-name: ghcr.io/${{ github.repository }}/frontend
+      tags: ${{ needs.generate-frontend-tags.outputs.tags }}
+      environment: ${{ needs.determine-environment.outputs.environment }}
+      cache-scope: frontend-${{ needs.determine-environment.outputs.environment }}
+      build-args: |
+        ENVIRONMENT=${{ needs.determine-environment.outputs.environment }}
+
+  deployment-summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [determine-environment, detect-changes, build-and-push-backend, build-and-push-frontend]
+    if: always()
+    steps:
+      - name: Output deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ needs.determine-environment.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Changes Detected" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend: ${{ needs.detect-changes.outputs.backend }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: ${{ needs.detect-changes.outputs.frontend }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Backend Image" >> $GITHUB_STEP_SUMMARY
+          BACKEND_RESULT="${{ needs.build-and-push-backend.result }}"
+          if [ "$BACKEND_RESULT" == "success" ]; then
+            echo "✅ Built and pushed (platform info unavailable)" >> $GITHUB_STEP_SUMMARY
+          elif [ "$BACKEND_RESULT" == "skipped" ]; then
+            echo "⏭️ Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Build or push failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Frontend Image" >> $GITHUB_STEP_SUMMARY
+          FRONTEND_RESULT="${{ needs.build-and-push-frontend.result }}"
+          if [ "$FRONTEND_RESULT" == "success" ]; then
+            echo "✅ Built and pushed (platform info unavailable)" >> $GITHUB_STEP_SUMMARY
+          elif [ "$FRONTEND_RESULT" == "skipped" ]; then
+            echo "⏭️ Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Build or push failed" >> $GITHUB_STEP_SUMMARY
+          fi
