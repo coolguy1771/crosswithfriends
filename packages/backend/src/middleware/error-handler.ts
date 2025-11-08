@@ -31,7 +31,6 @@ export function setupErrorHandler(app: FastifyInstance) {
       zodError = error;
     } else {
       const cause = (error as {cause?: unknown}).cause;
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (cause instanceof ZodError) {
         zodError = cause;
       }

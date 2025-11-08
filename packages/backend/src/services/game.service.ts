@@ -146,7 +146,8 @@ export class GameService {
         const action = event.params.action;
         if (action === 'start' || action === 'resume') {
           state.clock.paused = false;
-        } else if (action === 'pause') {
+        } else {
+          // action must be 'pause' at this point
           state.clock.paused = true;
         }
         if (event.params.totalTime !== undefined) {

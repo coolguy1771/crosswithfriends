@@ -67,7 +67,7 @@ export async function runMigrations(): Promise<void> {
       const result = await migrationClient<[{acquired: boolean}]>`
         SELECT pg_try_advisory_lock(${MIGRATION_LOCK_KEY}) as acquired
       `;
-      lockAcquired = result[0]?.acquired ?? false;
+      lockAcquired = result[0].acquired;
     } catch (error) {
       throw new Error(
         `Failed to acquire migration lock: ${error instanceof Error ? error.message : String(error)}`

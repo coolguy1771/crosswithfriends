@@ -17,7 +17,8 @@ export function getDatabase() {
 
   // Use DATABASE_URL if provided, otherwise construct from individual env vars
   const connectionString =
-    ((isTest && testDbUrl) || env.DATABASE_URL) ??
+    (isTest ? testDbUrl : undefined) ??
+    env.DATABASE_URL ??
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     `postgresql://${env.PGUSER ?? 'postgres'}:${env.PGPASSWORD ?? ''}@${env.PGHOST ?? 'localhost'}:5432/${env.PGDATABASE ?? 'dfac'}${isTest && !testDbUrl ? '_test' : ''}`;
 

@@ -86,7 +86,6 @@ export class SolveService {
       // Handle unique constraint violation (PostgreSQL error code 23505)
       // If a unique index on (pid, gid) exists and another request inserted first,
       // this transaction will fail and rollback, preventing double increment
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
         // Unique constraint violation - transaction has rolled back
         // Check again outside transaction to confirm it exists (idempotency)

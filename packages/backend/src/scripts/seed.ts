@@ -33,6 +33,7 @@ import {getDatabase, closeDatabase} from '../config/database';
 import {puzzles} from '../models/schema';
 import {createTestPuzzle, createMiniPuzzle, createStandardPuzzle} from '../test/fixtures/puzzles';
 import type {NewPuzzle} from '../models/schema';
+import type {PuzzleJson} from '@crosswithfriends/shared';
 
 function generateId(): string {
   // Generate a simple ID (in production, you might use UUID)
@@ -78,7 +79,7 @@ async function seed() {
     const seedPuzzles: NewPuzzle[] = [];
 
     // Create a few test puzzles
-    const puzzleData = [
+    const puzzleData: Array<{puzzle: PuzzleJson; isPublic: boolean}> = [
       {
         puzzle: createTestPuzzle({
           info: {

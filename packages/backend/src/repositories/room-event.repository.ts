@@ -143,7 +143,7 @@ export class RoomEventRepository {
 
     // This should never be reached, but TypeScript needs it
     throw (
-      lastError || new Error(`Failed to insert room event for rid: ${data.rid} after ${maxRetries} attempts`)
+      lastError ?? new Error(`Failed to insert room event for rid: ${data.rid} after ${maxRetries} attempts`)
     );
   }
 }

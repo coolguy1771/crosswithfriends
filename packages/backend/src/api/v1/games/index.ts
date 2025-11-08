@@ -1,7 +1,7 @@
 import type {FastifyInstance, FastifyPluginOptions} from 'fastify';
 import {randomUUID} from 'node:crypto';
 import {z} from 'zod';
-import type {GameEvent, GameId, InfoJson} from '@crosswithfriends/shared';
+import type {GameId, CreateGameEvent} from '@crosswithfriends/shared';
 import {GameEventRepository, PuzzleRepository} from '../../../repositories';
 import {GameService} from '../../../services';
 import {NotFoundError} from '../../../lib/errors.js';
@@ -36,14 +36,14 @@ export default function gamesRouter(app: FastifyInstance, _options: FastifyPlugi
   // GET /api/v1/games/:gid - Get game info
   app.get<{Params: z.infer<typeof gameParamsSchema>}>('/:gid', async (request, reply) => {
     const {gid} = gameParamsSchema.parse(request.params);
-    const events = (await gameService.getGameEvents(gid as GameId)) as GameEvent[];
+    const events = await gameService.getGameEvents(gid as GameId);
 
     if (events.length === 0) {
       throw new NotFoundError(`Game ${gid} not found`);
     }
 
     // Get create event for basic info
-    const createEvent = events.find((e): e is GameEvent<'create'> => e.type === 'create');
+    const createEvent = events.find((e): e is CreateGameEvent => e.type === 'create');
     if (!createEvent) {
       throw new NotFoundError(`Game ${gid} not found`);
     }
@@ -51,7 +51,7 @@ export default function gamesRouter(app: FastifyInstance, _options: FastifyPlugi
     return reply.send({
       gid,
       pid: createEvent.params.pid,
-      info: createEvent.params.game.info as InfoJson,
+      info: createEvent.params.game.info,
     });
   });
 

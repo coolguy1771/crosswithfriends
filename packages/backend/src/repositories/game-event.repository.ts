@@ -143,7 +143,7 @@ export class GameEventRepository {
 
     // This should never be reached, but TypeScript needs it
     throw (
-      lastError || new Error(`Failed to insert game event for gid: ${data.gid} after ${maxRetries} attempts`)
+      lastError ?? new Error(`Failed to insert game event for gid: ${data.gid} after ${maxRetries} attempts`)
     );
   }
 

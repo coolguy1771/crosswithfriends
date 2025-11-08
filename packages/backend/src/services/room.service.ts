@@ -12,7 +12,7 @@ export class RoomService {
   constructor(private roomEventRepo: RoomEventRepository) {}
 
   async createRoom(request: CreateRoomRequest): Promise<CreateRoomResponse> {
-    const rid = request.rid ?? randomUUID();
+    const rid = (request.rid ?? randomUUID()) as RoomId;
 
     // Create initial room_settings_update event to persist the room
     const initialEvent: RoomEvent = {
