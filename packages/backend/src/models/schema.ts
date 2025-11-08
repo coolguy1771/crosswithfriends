@@ -12,7 +12,7 @@ import {
 import type {PuzzleJson} from '@crosswithfriends/shared';
 import type {GameEvent, RoomEvent} from '@crosswithfriends/shared';
 
-// Puzzles table (per technical spec)
+// Puzzles table
 export const puzzles = pgTable('puzzles', {
   id: text('id').primaryKey(),
   pid: text('pid').notNull().unique(),
@@ -24,7 +24,7 @@ export const puzzles = pgTable('puzzles', {
   createdBy: text('created_by'),
 });
 
-// Game Events table (Event Store - per technical spec)
+// Game Events table
 export const gameEvents = pgTable(
   'game_events',
   {
@@ -37,12 +37,12 @@ export const gameEvents = pgTable(
     timestamp: timestamp('timestamp', {withTimezone: true}).notNull().defaultNow(),
     version: integer('version').notNull().default(1),
   },
-  (table) => ({
-    gidSequenceUnique: uniqueIndex('game_events_gid_sequence_unique').on(table.gid, table.sequenceNumber),
-  })
+  (table) => [
+    uniqueIndex('game_events_gid_sequence_unique').on(table.gid, table.sequenceNumber),
+  ]
 );
 
-// Game Snapshots (Performance Optimization - per technical spec)
+// Game Snapshots
 export const gameSnapshots = pgTable('game_snapshots', {
   gid: text('gid').primaryKey(),
   snapshotData: jsonb('snapshot_data').notNull(),
@@ -51,7 +51,7 @@ export const gameSnapshots = pgTable('game_snapshots', {
   updatedAt: timestamp('updated_at', {withTimezone: true}).notNull().defaultNow(),
 });
 
-// Puzzle Solves table (per technical spec)
+// Puzzle Solves table
 export const puzzleSolves = pgTable('puzzle_solves', {
   id: text('id').primaryKey(),
   pid: text('pid').notNull(),
@@ -62,7 +62,7 @@ export const puzzleSolves = pgTable('puzzle_solves', {
   checkedSquaresCount: integer('checked_squares_count').default(0),
 });
 
-// Room Events table (per technical spec)
+// Room Events table
 export const roomEvents = pgTable(
   'room_events',
   {
@@ -74,9 +74,9 @@ export const roomEvents = pgTable(
     userId: text('user_id'),
     timestamp: timestamp('timestamp', {withTimezone: true}).notNull().defaultNow(),
   },
-  (table) => ({
-    ridSequenceUnique: uniqueIndex('room_events_rid_sequence_unique').on(table.rid, table.sequenceNumber),
-  })
+  (table) => [
+    uniqueIndex('room_events_rid_sequence_unique').on(table.rid, table.sequenceNumber),
+  ]
 );
 
 // Export types for use in repositories

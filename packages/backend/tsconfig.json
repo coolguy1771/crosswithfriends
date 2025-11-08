@@ -2,7 +2,6 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
     "noEmit": false,
     "composite": true,
     "declaration": true,
@@ -11,9 +10,15 @@
     "incremental": true,
     "types": ["node"],
     "paths": {
-      "@shared/*": ["../shared/src/*"]
+      "@shared/*": ["../shared/src/*"],
+      "@crosswithfriends/shared": ["../shared/src/index.ts"]
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
+  "references": [
+    {
+      "path": "../shared"
+    }
+  ]
 }

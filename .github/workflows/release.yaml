@@ -42,7 +42,7 @@ jobs:
   build-backend:
     name: Build and Push Backend Image
     needs: generate-tags
-    uses: ./.github/workflows/reusable-build-push-docker.yml
+    uses: ./.github/workflows/reusable-build-push-docker.yaml
     with:
       service: backend
       dockerfile: ./packages/backend/Dockerfile
@@ -54,7 +54,7 @@ jobs:
   build-frontend:
     name: Build and Push Frontend Image
     needs: generate-tags
-    uses: ./.github/workflows/reusable-build-push-docker.yml
+    uses: ./.github/workflows/reusable-build-push-docker.yaml
     with:
       service: frontend
       dockerfile: ./packages/frontend/Dockerfile

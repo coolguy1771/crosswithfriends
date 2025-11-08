@@ -32,8 +32,51 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run pnpm audit
-        run: pnpm audit --audit-level=moderate
-        continue-on-error: true
+        run: pnpm audit --audit-level=moderate --json > audit-report.json || true
+
+      - name: Check audit results
+        run: |
+          node -e "
+          const fs = require('fs');
+          try {
+            const content = fs.readFileSync('audit-report.json', 'utf8').trim();
+            if (!content) {
+              console.error('⚠️ audit-report.json is empty, audit may have failed');
+              process.exit(1);
+            }
+            
+            const report = JSON.parse(content);
+            // pnpm audit JSON may have 'advisories' or 'vulnerabilities' field
+            const advisories = report.advisories || report.vulnerabilities || {};
+            const vulnCount = typeof advisories === 'object' ? Object.keys(advisories).length : 0;
+            
+            if (vulnCount > 0) {
+              console.error('❌ Found ' + vulnCount + ' moderate-or-higher vulnerabilities');
+              console.error('Vulnerability summary:');
+              for (const [id, vuln] of Object.entries(advisories)) {
+                const name = vuln.module_name || vuln.name || id;
+                const title = vuln.title || vuln.name || 'Unknown vulnerability';
+                const severity = vuln.severity || 'unknown';
+                console.error('  - ' + name + ': ' + title + ' (severity: ' + severity + ')');
+              }
+              process.exit(1);
+            } else {
+              console.log('✅ No moderate-or-higher vulnerabilities found');
+            }
+          } catch (error) {
+            if (error.code === 'ENOENT') {
+              console.error('⚠️ audit-report.json not found, audit may have failed');
+              process.exit(1);
+            } else if (error instanceof SyntaxError) {
+              console.error('⚠️ Error parsing audit report JSON:', error.message);
+              console.error('Raw content preview:', fs.readFileSync('audit-report.json', 'utf8').substring(0, 200));
+              process.exit(1);
+            } else {
+              console.error('⚠️ Error processing audit report:', error.message);
+              process.exit(1);
+            }
+          }
+          "
 
       - name: Upload audit results
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
@@ -41,7 +84,7 @@ jobs:
         with:
           name: audit-results
           path: |
-            pnpm-audit.json
+            audit-report.json
           retention-days: 30
 
   container-scan:

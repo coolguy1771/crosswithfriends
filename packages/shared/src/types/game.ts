@@ -313,12 +313,12 @@ export interface RecordSolveRequest {
 /**
  * Response after recording a puzzle solve
  */
-export interface RecordSolveResponse {}
+export type RecordSolveResponse = Record<string, never>;
 
 /**
  * Request to increment and get the next game ID
  */
-export interface IncrementGidRequest {}
+export type IncrementGidRequest = Record<string, never>;
 
 /**
  * Response containing the next game ID

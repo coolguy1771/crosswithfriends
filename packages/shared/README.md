@@ -28,25 +28,25 @@ import {
   GameId,
   RoomId,
   UserId,
-  
+
   // Puzzle types
   PuzzleJson,
   InfoJson,
   CluesJson,
   CellData,
   GridData,
-  
+
   // Game types
   GameJson,
   GameState,
   GameEvent,
   UserJson,
   Cursor,
-  
+
   // Room types
   RoomState,
   RoomEvent,
-  
+
   // API types
   CreateGameRequest,
   CreateGameResponse,

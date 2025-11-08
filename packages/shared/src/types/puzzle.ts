@@ -269,7 +269,7 @@ export interface ListPuzzleStatsResponse {
 /**
  * Request to increment and get the next puzzle ID
  */
-export interface IncrementPidRequest {}
+export type IncrementPidRequest = Record<string, never>;
 
 /**
  * Response containing the next puzzle ID
