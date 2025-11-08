@@ -37,9 +37,7 @@ export const gameEvents = pgTable(
     timestamp: timestamp('timestamp', {withTimezone: true}).notNull().defaultNow(),
     version: integer('version').notNull().default(1),
   },
-  (table) => [
-    uniqueIndex('game_events_gid_sequence_unique').on(table.gid, table.sequenceNumber),
-  ]
+  (table) => [uniqueIndex('game_events_gid_sequence_unique').on(table.gid, table.sequenceNumber)]
 );
 
 // Game Snapshots
@@ -74,9 +72,7 @@ export const roomEvents = pgTable(
     userId: text('user_id'),
     timestamp: timestamp('timestamp', {withTimezone: true}).notNull().defaultNow(),
   },
-  (table) => [
-    uniqueIndex('room_events_rid_sequence_unique').on(table.rid, table.sequenceNumber),
-  ]
+  (table) => [uniqueIndex('room_events_rid_sequence_unique').on(table.rid, table.sequenceNumber)]
 );
 
 // Export types for use in repositories

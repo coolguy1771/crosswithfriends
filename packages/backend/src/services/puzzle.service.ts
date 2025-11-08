@@ -12,6 +12,7 @@ export class PuzzleService {
   constructor(
     private puzzleRepo: PuzzleRepository,
     // solveRepo is kept for future use but currently unused
+    // @ts-expect-error - Intentionally unused, reserved for future functionality
     private _solveRepo?: PuzzleSolveRepository
   ) {}
 

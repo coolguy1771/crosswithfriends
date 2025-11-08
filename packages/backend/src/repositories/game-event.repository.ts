@@ -91,7 +91,7 @@ export class GameEventRepository {
         // PostgreSQL error code 23505 = unique_violation (can be string or number)
         // PostgreSQL error code 40001 = serialization_failure (can be string or number)
         const errorMessage = error instanceof Error ? error.message : String(error);
-        
+
         // Try to extract error code from various possible locations
         let errorCode: string | number | undefined;
         if (error && typeof error === 'object') {
@@ -110,10 +110,10 @@ export class GameEventRepository {
             }
           }
         }
-        
+
         const errorCodeStr = String(errorCode ?? '');
         const errorCodeNum = typeof errorCode === 'number' ? errorCode : undefined;
-        
+
         // Check error code - postgres.js may return it as string '23505' or number 23505
         // Also check error message as fallback
         const isUniqueViolation =
@@ -142,7 +142,9 @@ export class GameEventRepository {
     }
 
     // This should never be reached, but TypeScript needs it
-    throw lastError || new Error(`Failed to insert game event for gid: ${data.gid} after ${maxRetries} attempts`);
+    throw (
+      lastError || new Error(`Failed to insert game event for gid: ${data.gid} after ${maxRetries} attempts`)
+    );
   }
 
   async getCreateEvent(gid: string): Promise<GameEventRecord | null> {
