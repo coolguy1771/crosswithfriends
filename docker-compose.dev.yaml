@@ -1,5 +1,4 @@
 ---
-
 # Development-only compose file - runs only the database
 # Run backend and frontend locally for better hot-reload experience
 

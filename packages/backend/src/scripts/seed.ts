@@ -89,15 +89,15 @@ async function seed() {
             description: 'A simple 3x3 puzzle to get started',
             type: 'Mini Puzzle',
           },
-        }),
+        }) as PuzzleJson,
         isPublic: true,
       },
       {
-        puzzle: createMiniPuzzle(),
+        puzzle: createMiniPuzzle() as PuzzleJson,
         isPublic: true,
       },
       {
-        puzzle: createStandardPuzzle(),
+        puzzle: createStandardPuzzle() as PuzzleJson,
         isPublic: true,
       },
       {
@@ -109,7 +109,7 @@ async function seed() {
             description: 'This puzzle is not public',
             type: 'Daily Puzzle',
           },
-        }),
+        }) as PuzzleJson,
         isPublic: false,
       },
     ];
