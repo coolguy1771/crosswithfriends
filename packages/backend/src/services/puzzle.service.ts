@@ -1,5 +1,5 @@
 import {randomUUID} from 'crypto';
-import {PuzzleRepository} from '../repositories';
+import {PuzzleRepository, PuzzleSolveRepository} from '../repositories';
 import type {
   PuzzleJson,
   AddPuzzleRequest,
@@ -10,10 +10,9 @@ import type {
 
 export class PuzzleService {
   constructor(
-    private puzzleRepo: PuzzleRepository
+    private puzzleRepo: PuzzleRepository,
     // solveRepo is kept for future use but currently unused
-
-    // private _solveRepo: PuzzleSolveRepository
+    private _solveRepo?: PuzzleSolveRepository
   ) {}
 
   async createPuzzle(request: AddPuzzleRequest): Promise<AddPuzzleResponse> {

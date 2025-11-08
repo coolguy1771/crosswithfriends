@@ -7,6 +7,7 @@ const envSchema = z.object({
   PGHOST: z.string().default('localhost'),
   PGUSER: z.string().default('postgres'),
   PGPASSWORD: z.string().default(''),
+  PGPORT: z.coerce.number().optional(),
   PGDATABASE: z.string().default('dfac'),
   REDIS_URL: z.string().url().optional(),
   CORS_ORIGIN: z.string().default('*'),

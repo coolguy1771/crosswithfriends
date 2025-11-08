@@ -51,9 +51,14 @@ export async function buildApp(): Promise<{app: FastifyInstance; socketManager: 
     },
   });
 
+  // Configure CORS: credentials only allowed for explicit origins, not wildcard
+  const isWildcardOrigin = env.CORS_ORIGIN === '*';
+  const origin = isWildcardOrigin ? true : env.CORS_ORIGIN.split(',');
+  const credentials = !isWildcardOrigin; // Disable credentials for wildcard origin
+
   await app.register(cors, {
-    origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(','),
-    credentials: true,
+    origin,
+    credentials,
   });
 
   // Configure rate limiting with Redis store if available, otherwise in-memory

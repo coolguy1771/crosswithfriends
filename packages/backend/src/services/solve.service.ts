@@ -1,8 +1,11 @@
 import {randomUUID} from 'crypto';
 import {PuzzleSolveRepository, PuzzleRepository, GameEventRepository} from '../repositories';
+import {getDatabase} from '../config/database.js';
 import type {RecordSolveRequest, RecordSolveResponse, GameEvent} from '@crosswithfriends/shared';
 
 export class SolveService {
+  private db = getDatabase();
+
   constructor(
     private solveRepo: PuzzleSolveRepository,
     private puzzleRepo: PuzzleRepository,
@@ -39,34 +42,62 @@ export class SolveService {
   }
 
   async recordSolve(pid: string, request: RecordSolveRequest): Promise<RecordSolveResponse> {
-    // Check if already solved (idempotency)
-    const existing = await this.solveRepo.findByPidAndGid(pid, request.gid);
-    if (existing) {
-      return {}; // Already recorded
-    }
-
-    // Get game events to calculate revealed/checked squares
+    // Get game events to calculate revealed/checked squares (outside transaction for performance)
     const events = await this.gameEventRepo.getEvents(request.gid);
     const {revealedSquaresCount, checkedSquaresCount} = this.calculateSquareCounts(events);
 
-    // Use transaction to ensure atomicity
-    // Note: Drizzle transactions would be used here in full implementation
-    const id = randomUUID();
+    // Wrap the entire read/insert/increment flow in a transaction to ensure atomicity
+    // and prevent race conditions where two simultaneous requests both insert and increment
+    try {
+      return await this.db.transaction(
+        async (tx) => {
+          // Check if already solved (idempotency) - within transaction
+          const existing = await this.solveRepo.findByPidAndGid(pid, request.gid, tx);
+          if (existing) {
+            return {}; // Already recorded
+          }
 
-    await this.solveRepo.create({
-      id,
-      pid,
-      gid: request.gid,
-      timeTakenSeconds: request.time_to_solve,
-      solvedAt: new Date(),
-      revealedSquaresCount,
-      checkedSquaresCount,
-    });
+          const id = randomUUID();
 
-    // Increment puzzle solve count
-    await this.puzzleRepo.incrementSolveCount(pid);
+          // Insert solve record within transaction
+          await this.solveRepo.create(
+            {
+              id,
+              pid,
+              gid: request.gid,
+              timeTakenSeconds: request.time_to_solve,
+              solvedAt: new Date(),
+              revealedSquaresCount,
+              checkedSquaresCount,
+            },
+            tx
+          );
 
-    return {};
+          // Increment puzzle solve count within the same transaction
+          await this.puzzleRepo.incrementSolveCount(pid, tx);
+
+          return {};
+        },
+        {
+          isolationLevel: 'read committed',
+        }
+      );
+    } catch (error) {
+      // Handle unique constraint violation (PostgreSQL error code 23505)
+      // If a unique index on (pid, gid) exists and another request inserted first,
+      // this transaction will fail and rollback, preventing double increment
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+        // Unique constraint violation - transaction has rolled back
+        // Check again outside transaction to confirm it exists (idempotency)
+        const existingAfterError = await this.solveRepo.findByPidAndGid(pid, request.gid);
+        if (existingAfterError) {
+          return {}; // Already recorded by another request
+        }
+      }
+      // Re-throw other errors
+      throw error;
+    }
   }
 
   async getSolvesByPid(pid: string) {

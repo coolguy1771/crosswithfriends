@@ -30,6 +30,38 @@ function assignTimestamp(event: SocketEvent): SocketEvent | number {
   return event;
 }
 
+/**
+ * Sanitizes a game event by removing server-only fields before sending to clients.
+ * Deep clones the event to avoid mutating the original persisted object.
+ */
+function sanitizeGameEvent(event: GameEvent): GameEvent {
+  // Deep clone the event using JSON serialization to avoid mutating the original
+  const sanitized = JSON.parse(JSON.stringify(event)) as GameEvent;
+
+  // Remove solution from CreateGameEvent.params.game (server-only data)
+  if (
+    sanitized.type === 'create' &&
+    'params' in sanitized &&
+    sanitized.params &&
+    typeof sanitized.params === 'object'
+  ) {
+    const params = sanitized.params as unknown as {game?: {solution?: unknown; [key: string]: unknown}};
+    if (params.game && typeof params.game === 'object' && 'solution' in params.game) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+      delete params.game.solution;
+    }
+  }
+
+  return sanitized;
+}
+
+/**
+ * Sanitizes an array of game events by removing server-only fields.
+ */
+function sanitizeGameEvents(events: GameEvent[]): GameEvent[] {
+  return events.map(sanitizeGameEvent);
+}
+
 export class SocketManager {
   private io: SocketIOServer;
   private gameEventRepo: GameEventRepository;
@@ -92,7 +124,9 @@ export class SocketManager {
       timestamp: new Date(gameEvent.timestamp),
       version: 1,
     });
-    void this.io.to(`game-${gid}`).emit('game_event', gameEvent);
+    // Sanitize the event before emitting to clients to remove server-only data
+    const sanitizedEvent = sanitizeGameEvent(gameEvent);
+    void this.io.to(`game-${gid}`).emit('game_event', sanitizedEvent);
   }
 
   async addRoomEvent(rid: string, event: SocketEvent): Promise<void> {
@@ -155,7 +189,9 @@ export class SocketManager {
       socket.on('sync_all_game_events', async (gid: string, ack?: (events: GameEvent[]) => void) => {
         try {
           const events = await this.gameService.getGameEvents(gid);
-          ack?.(events);
+          // Sanitize events before sending to clients to remove server-only data
+          const sanitizedEvents = sanitizeGameEvents(events);
+          ack?.(sanitizedEvents);
         } catch {
           socket.emit('error', {message: 'Failed to sync game events'});
           ack?.([]);

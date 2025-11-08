@@ -23,7 +23,7 @@ export default function roomsRouter(app: FastifyInstance, _options: FastifyPlugi
     Body: z.infer<typeof createRoomSchema>;
   }>('/', async (request, reply) => {
     const validated = createRoomSchema.parse(request.body);
-    const result = roomService.createRoom({
+    const result = await roomService.createRoom({
       ...(validated.rid !== undefined ? {rid: validated.rid} : {}),
     });
     return reply.status(201).send(result);

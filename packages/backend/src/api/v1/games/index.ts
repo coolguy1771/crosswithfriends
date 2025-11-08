@@ -1,4 +1,5 @@
 import type {FastifyInstance, FastifyPluginOptions} from 'fastify';
+import {randomUUID} from 'node:crypto';
 import {z} from 'zod';
 import {GameEventRepository, PuzzleRepository} from '../../../repositories';
 import {GameService} from '../../../services';
@@ -26,7 +27,7 @@ export default function gamesRouter(app: FastifyInstance, _options: FastifyPlugi
     const validated = createGameSchema.parse(request.body);
     const result = await gameService.createGame({
       pid: validated.pid,
-      gid: validated.gid ?? crypto.randomUUID(),
+      gid: validated.gid ?? randomUUID(),
     });
     return reply.status(201).send(result);
   });

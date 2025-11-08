@@ -11,12 +11,26 @@ import type {
 export class RoomService {
   constructor(private roomEventRepo: RoomEventRepository) {}
 
-  createRoom(request: CreateRoomRequest): CreateRoomResponse {
+  async createRoom(request: CreateRoomRequest): Promise<CreateRoomResponse> {
     const rid = request.rid ?? randomUUID();
 
-    // Create initial user_join event if needed
-    // For now, just return the room ID
-    // In full implementation, would create initial room setup event
+    // Create initial room_settings_update event to persist the room
+    const initialEvent: RoomEvent = {
+      type: 'room_settings_update',
+      timestamp: Date.now(),
+      params: {
+        settings: {},
+      },
+    };
+
+    // Persist the initial event and await the write
+    await this.roomEventRepo.addEvent({
+      rid,
+      eventType: initialEvent.type,
+      eventPayload: initialEvent,
+      userId: initialEvent.userId ?? undefined,
+      timestamp: new Date(initialEvent.timestamp),
+    });
 
     return {rid};
   }

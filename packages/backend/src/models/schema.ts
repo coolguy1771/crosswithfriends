@@ -1,4 +1,14 @@
-import {pgTable, text, jsonb, boolean, timestamp, integer, bigserial, bigint} from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  jsonb,
+  boolean,
+  timestamp,
+  integer,
+  bigserial,
+  bigint,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 import type {PuzzleJson} from '@crosswithfriends/shared';
 import type {GameEvent, RoomEvent} from '@crosswithfriends/shared';
 
@@ -15,16 +25,22 @@ export const puzzles = pgTable('puzzles', {
 });
 
 // Game Events table (Event Store - per technical spec)
-export const gameEvents = pgTable('game_events', {
-  id: bigserial('id', {mode: 'number'}).primaryKey(),
-  gid: text('gid').notNull(),
-  sequenceNumber: bigint('sequence_number', {mode: 'number'}).notNull(),
-  eventType: text('event_type').notNull(),
-  eventPayload: jsonb('event_payload').notNull().$type<GameEvent>(),
-  userId: text('user_id'),
-  timestamp: timestamp('timestamp', {withTimezone: true}).notNull().defaultNow(),
-  version: integer('version').notNull().default(1),
-});
+export const gameEvents = pgTable(
+  'game_events',
+  {
+    id: bigserial('id', {mode: 'number'}).primaryKey(),
+    gid: text('gid').notNull(),
+    sequenceNumber: bigint('sequence_number', {mode: 'number'}).notNull(),
+    eventType: text('event_type').notNull(),
+    eventPayload: jsonb('event_payload').notNull().$type<GameEvent>(),
+    userId: text('user_id'),
+    timestamp: timestamp('timestamp', {withTimezone: true}).notNull().defaultNow(),
+    version: integer('version').notNull().default(1),
+  },
+  (table) => ({
+    gidSequenceUnique: uniqueIndex('game_events_gid_sequence_unique').on(table.gid, table.sequenceNumber),
+  })
+);
 
 // Game Snapshots (Performance Optimization - per technical spec)
 export const gameSnapshots = pgTable('game_snapshots', {
@@ -47,15 +63,21 @@ export const puzzleSolves = pgTable('puzzle_solves', {
 });
 
 // Room Events table (per technical spec)
-export const roomEvents = pgTable('room_events', {
-  id: bigserial('id', {mode: 'number'}).primaryKey(),
-  rid: text('rid').notNull(),
-  sequenceNumber: bigint('sequence_number', {mode: 'number'}).notNull(),
-  eventType: text('event_type').notNull(),
-  eventPayload: jsonb('event_payload').notNull().$type<RoomEvent>(),
-  userId: text('user_id'),
-  timestamp: timestamp('timestamp', {withTimezone: true}).notNull().defaultNow(),
-});
+export const roomEvents = pgTable(
+  'room_events',
+  {
+    id: bigserial('id', {mode: 'number'}).primaryKey(),
+    rid: text('rid').notNull(),
+    sequenceNumber: bigint('sequence_number', {mode: 'number'}).notNull(),
+    eventType: text('event_type').notNull(),
+    eventPayload: jsonb('event_payload').notNull().$type<RoomEvent>(),
+    userId: text('user_id'),
+    timestamp: timestamp('timestamp', {withTimezone: true}).notNull().defaultNow(),
+  },
+  (table) => ({
+    ridSequenceUnique: uniqueIndex('room_events_rid_sequence_unique').on(table.rid, table.sequenceNumber),
+  })
+);
 
 // Export types for use in repositories
 export type Puzzle = typeof puzzles.$inferSelect;

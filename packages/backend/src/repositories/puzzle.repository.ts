@@ -4,11 +4,14 @@ import {puzzles} from '../models/schema.js';
 import type {PuzzleJson} from '@crosswithfriends/shared';
 import type {Puzzle, NewPuzzle} from '../models/schema.js';
 
+type Database = ReturnType<typeof getDatabase>;
+type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+
 export class PuzzleRepository {
   private db = getDatabase();
 
-  async findById(pid: string): Promise<Puzzle | null> {
-    const result = await this.db.select().from(puzzles).where(eq(puzzles.pid, pid)).limit(1);
+  async findById(id: string): Promise<Puzzle | null> {
+    const result = await this.db.select().from(puzzles).where(eq(puzzles.id, id)).limit(1);
 
     return result[0] ?? null;
   }
@@ -110,8 +113,9 @@ export class PuzzleRepository {
     }));
   }
 
-  async incrementSolveCount(pid: string): Promise<void> {
-    await this.db
+  async incrementSolveCount(pid: string, tx?: Transaction): Promise<void> {
+    const db = tx ?? this.db;
+    await db
       .update(puzzles)
       .set({timesSolved: sql`${puzzles.timesSolved} + 1`})
       .where(eq(puzzles.pid, pid));
