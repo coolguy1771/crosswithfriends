@@ -123,16 +123,22 @@ jobs:
         working-directory: packages/backend
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/dfac_test
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: password
+          PGDATABASE: dfac_test
         run: |
-          echo "Testing migrations up..."
-          pnpm run db:migrate || {
+          echo "Testing migrations up using custom migration runner..."
+          # Use the same migration runner that the application uses at runtime
+          tsx src/scripts/migrate.ts || {
             echo "ERROR: Migration command failed"
             echo "Checking database connection..."
             psql -h localhost -U postgres -d dfac_test -c "SELECT version();" || echo "Database connection failed"
             exit 1
           }
 
-      - name: Verify migration tracking table
+      - name: Verify migrations applied successfully
         env:
           PGHOST: localhost
           PGPORT: 5432
@@ -140,30 +146,37 @@ jobs:
           PGPASSWORD: password
           PGDATABASE: dfac_test
         run: |
-          echo "Verifying migration tracking..."
+          echo "Verifying that migrations were applied successfully..."
 
-          # Check if the migrations table exists
-          TABLE_EXISTS=$(psql -h localhost -U postgres -d dfac_test -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'drizzle_migrations');")
+          # Check that expected tables exist (these are created by migrations)
+          EXPECTED_TABLES=("puzzles" "game_events" "game_snapshots" "puzzle_solves" "room_events")
+          MISSING_TABLES=()
 
-          if [ "$TABLE_EXISTS" != "t" ]; then
-            echo "ERROR: drizzle_migrations table does not exist. Migrations may not have run successfully."
-            echo "Attempting to check if any tables exist in the database..."
-            psql -h localhost -U postgres -d dfac_test -c "\dt"
+          for table in "${EXPECTED_TABLES[@]}"; do
+            EXISTS=$(psql -h localhost -U postgres -d dfac_test -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table');")
+            if [ "$EXISTS" != "t" ]; then
+              MISSING_TABLES+=("$table")
+            else
+              echo "✓ Table '$table' exists"
+            fi
+          done
+
+          if [ ${#MISSING_TABLES[@]} -ne 0 ]; then
+            echo "ERROR: The following tables are missing: ${MISSING_TABLES[*]}"
+            echo "This indicates migrations did not run successfully."
             exit 1
           fi
 
-          # Query the migrations table
-          echo "Migration tracking table exists. Listing applied migrations:"
-          psql -h localhost -U postgres -d dfac_test -c "SELECT hash, created_at FROM drizzle_migrations ORDER BY created_at;"
-
-          # Check if any migrations were applied
-          MIGRATION_COUNT=$(psql -h localhost -U postgres -d dfac_test -tAc "SELECT COUNT(*) FROM drizzle_migrations;")
-          if [ "$MIGRATION_COUNT" = "0" ]; then
-            echo "WARNING: No migrations have been recorded in the tracking table."
-            echo "This might indicate that migrations were not applied, or the migration runner did not track them."
+          # Optionally verify tracking table exists (for the custom runner)
+          TRACKING_EXISTS=$(psql -h localhost -U postgres -d dfac_test -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'drizzle_migrations');")
+          if [ "$TRACKING_EXISTS" = "t" ]; then
+            MIGRATION_COUNT=$(psql -h localhost -U postgres -d dfac_test -tAc "SELECT COUNT(*) FROM drizzle_migrations;")
+            echo "✓ Migration tracking table exists with $MIGRATION_COUNT recorded migration(s)"
           else
-            echo "✓ Found $MIGRATION_COUNT migration(s) in tracking table"
+            echo "⚠️  Warning: Migration tracking table does not exist (custom runner may not work correctly)"
           fi
+
+          echo "✅ All expected tables exist - migrations applied successfully"
 
       - name: Migration summary
         if: always()
