@@ -125,7 +125,12 @@ jobs:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/dfac_test
         run: |
           echo "Testing migrations up..."
-          pnpm run db:migrate
+          pnpm run db:migrate || {
+            echo "ERROR: Migration command failed"
+            echo "Checking database connection..."
+            psql -h localhost -U postgres -d dfac_test -c "SELECT version();" || echo "Database connection failed"
+            exit 1
+          }
 
       - name: Verify migration tracking table
         env:
@@ -136,7 +141,29 @@ jobs:
           PGDATABASE: dfac_test
         run: |
           echo "Verifying migration tracking..."
+
+          # Check if the migrations table exists
+          TABLE_EXISTS=$(psql -h localhost -U postgres -d dfac_test -tAc "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'drizzle_migrations');")
+
+          if [ "$TABLE_EXISTS" != "t" ]; then
+            echo "ERROR: drizzle_migrations table does not exist. Migrations may not have run successfully."
+            echo "Attempting to check if any tables exist in the database..."
+            psql -h localhost -U postgres -d dfac_test -c "\dt"
+            exit 1
+          fi
+
+          # Query the migrations table
+          echo "Migration tracking table exists. Listing applied migrations:"
           psql -h localhost -U postgres -d dfac_test -c "SELECT hash, created_at FROM drizzle_migrations ORDER BY created_at;"
+
+          # Check if any migrations were applied
+          MIGRATION_COUNT=$(psql -h localhost -U postgres -d dfac_test -tAc "SELECT COUNT(*) FROM drizzle_migrations;")
+          if [ "$MIGRATION_COUNT" = "0" ]; then
+            echo "WARNING: No migrations have been recorded in the tracking table."
+            echo "This might indicate that migrations were not applied, or the migration runner did not track them."
+          else
+            echo "✓ Found $MIGRATION_COUNT migration(s) in tracking table"
+          fi
 
       - name: Migration summary
         if: always()
