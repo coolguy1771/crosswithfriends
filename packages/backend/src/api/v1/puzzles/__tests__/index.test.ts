@@ -1,4 +1,4 @@
-import {describe, it, expect, beforeEach} from 'vitest';
+import {describe, it, expect, beforeEach, afterEach} from 'vitest';
 import {getTestApp} from '../../../../test/helpers/app';
 import type {FastifyInstance} from 'fastify';
 import {PuzzleService} from '../../../../services';
@@ -15,6 +15,12 @@ describe('Puzzles API', () => {
     const puzzleRepo = new PuzzleRepository();
     const solveRepo = new PuzzleSolveRepository();
     puzzleService = new PuzzleService(puzzleRepo, solveRepo);
+  });
+
+  afterEach(async () => {
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('GET /api/v1/puzzles', () => {
