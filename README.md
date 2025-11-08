@@ -1,53 +1,185 @@
-[![DeepWiki](https://img.shields.io/badge/DeepWiki-downforacross%2Fdownforacross.com-blue.svg?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAyCAYAAAAnWDnqAAAAAXNSR0IArs4c6QAAA05JREFUaEPtmUtyEzEQhtWTQyQLHNak2AB7ZnyXZMEjXMGeK/AIi+QuHrMnbChYY7MIh8g01fJoopFb0uhhEqqcbWTp06/uv1saEDv4O3n3dV60RfP947Mm9/SQc0ICFQgzfc4CYZoTPAswgSJCCUJUnAAoRHOAUOcATwbmVLWdGoH//PB8mnKqScAhsD0kYP3j/Yt5LPQe2KvcXmGvRHcDnpxfL2zOYJ1mFwrryWTz0advv1Ut4CJgf5uhDuDj5eUcAUoahrdY/56ebRWeraTjMt/00Sh3UDtjgHtQNHwcRGOC98BJEAEymycmYcWwOprTgcB6VZ5JK5TAJ+fXGLBm3FDAmn6oPPjR4rKCAoJCal2eAiQp2x0vxTPB3ALO2CRkwmDy5WohzBDwSEFKRwPbknEggCPB/imwrycgxX2NzoMCHhPkDwqYMr9tRcP5qNrMZHkVnOjRMWwLCcr8ohBVb1OMjxLwGCvjTikrsBOiA6fNyCrm8V1rP93iVPpwaE+gO0SsWmPiXB+jikdf6SizrT5qKasx5j8ABbHpFTx+vFXp9EnYQmLx02h1QTTrl6eDqxLnGjporxl3NL3agEvXdT0WmEost648sQOYAeJS9Q7bfUVoMGnjo4AZdUMQku50McDcMWcBPvr0SzbTAFDfvJqwLzgxwATnCgnp4wDl6Aa+Ax283gghmj+vj7feE2KBBRMW3FzOpLOADl0Isb5587h/U4gGvkt5v60Z1VLG8BhYjbzRwyQZemwAd6cCR5/XFWLYZRIMpX39AR0tjaGGiGzLVyhse5C9RKC6ai42ppWPKiBagOvaYk8lO7DajerabOZP46Lby5wKjw1HCRx7p9sVMOWGzb/vA1hwiWc6jm3MvQDTogQkiqIhJV0nBQBTU+3okKCFDy9WwferkHjtxib7t3xIUQtHxnIwtx4mpg26/HfwVNVDb4oI9RHmx5WGelRVlrtiw43zboCLaxv46AZeB3IlTkwouebTr1y2NjSpHz68WNFjHvupy3q8TFn3Hos2IAk4Ju5dCo8B3wP7VPr/FGaKiG+T+v+TQqIrOqMTL1VdWV1DdmcbO8KXBz6esmYWYKPwDL5b5FA1a0hwapHiom0r/cKaoqr+27/XcrS5UwSMbQAAAABJRU5ErkJggg==)](https://deepwiki.com/downforacross/downforacross.com)
+# CrossWithFriends / Down for a Cross
 
+Modern rewrite of the CrossWithFriends backend and frontend with a monorepo workspace structure.
 
-## crosswithfriends 
+## Technology Stack
 
-Crosswithfriends is an online website for sharing crosswords and playing collaboratively with friends in real time.
+### Backend
 
-It is hosted at https://crosswithfriends.com/.
+- **Runtime**: Node.js 20 LTS+
+- **Package Manager**: pnpm 9.0+
+- **Framework**: Fastify 5.x
+- **Database**: PostgreSQL 15+ with Drizzle ORM
+- **Cache/Queue**: Redis 7+ (for Socket.IO scaling and distributed rate limiting)
+- **Validation**: Zod
+- **WebSocket**: Socket.IO 4.x with Redis adapter
+- **Logging**: Pino
+- **Testing**: Vitest
 
-## Contributing
+### Frontend
 
-If you notice a bug or have a feature request, feel free to open an issue.
+- **Build Tool**: Vite 6.x
+- **Framework**: React 18.3+
+- **State Management**: Zustand 5.x
+- **Data Fetching**: TanStack Query v5
+- **UI**: Tailwind CSS 4 (shadcn/ui ready)
+- **Routing**: React Router 6.28+
+- **WebSocket**: Socket.IO Client 4.8+
 
-### Getting Started
+### Shared
 
-1. Install `nvm` and `yarn`
+- **TypeScript**: 5.7 strict mode
+- **Types**: Shared between frontend and backend
 
-2. Clone repo and cd to repo root.
+## Workspace Structure
 
-   `git clone https://github.com/ScaleOvenStove/crosswithfriends.git`
-   `cd crosswithfriends`
+```
+packages/
+├── shared/     # Shared TypeScript types and utilities
+├── backend/    # Fastify backend server
+└── frontend/   # React frontend application
+```
 
-3. Use node v18
-   `nvm install`
-   `nvm use`
-   `nvm alias default 18` (optional)
+## Getting Started
 
-4. Install Dependencies
-   `yarn`
+### Prerequisites
 
-5. Run frontend server
-   `yarn start`
+- Node.js 20+ (LTS recommended)
+- pnpm 9.0+ (`npm install -g pnpm` or `corepack enable`)
+- PostgreSQL 15+ (or use Docker Compose)
+- Redis 7+ (optional, for horizontal scaling and distributed rate limiting)
 
-### Contributing
+### Installation
 
-Cross with Friends is open to contributions from developers of any level or experience.
-See the `Getting Started` section for instructions on setting up.
+```bash
+# Install all dependencies
+pnpm install
+```
 
-Join the [discord](https://discord.gg/RmjCV8EZ73) for discussion.
+### Development
 
-### Tips
+```bash
+# Run all packages in development mode
+pnpm run dev
 
-Developing for mobile web:
+# Run specific packages
+pnpm run dev:frontend
+pnpm run dev:backend
+```
 
-- Mobile device emulator: https://appetize.io/demo?device=nexus7&scale=50&orientation=portrait&osVersion=9.0
-- Public urls for local server: ngrok, https://ngrok.com/
-- Remote debugging (e.g. safari developer mode) tips: https://support.brightcove.com/debugging-mobile-devices
+### Quick Start with Docker
 
-### Other resources
+The easiest way to get started is using Docker Compose for the database:
 
-- https://firebase.google.com/docs/database/web/start (intro to firebase realtime database)
-- https://reactjs.org/tutorial/tutorial.html (intro to react)
-- https://discord.gg/RmjCV8EZ73 (community discord)
+```bash
+# Start PostgreSQL database
+docker-compose -f docker-compose.dev.yml up -d
+
+# Run database migrations
+pnpm run db:migrate
+
+# Start backend and frontend locally
+pnpm run dev:backend
+pnpm run dev:frontend
+```
+
+For more Docker options, see [DOCKER.md](./DOCKER.md).
+
+### Backend Setup
+
+1. Create a `.env` file in `packages/backend/`:
+
+```env
+NODE_ENV=development
+PORT=3021
+DATABASE_URL=postgresql://postgres:password@localhost:5432/dfac
+REDIS_URL=redis://localhost:6379
+CORS_ORIGIN=*
+LOG_LEVEL=info
+```
+
+**Note:** `REDIS_URL` is optional. If not provided, the app will use in-memory stores (not suitable for horizontal scaling).
+
+2. Run database migrations:
+
+```bash
+# Generate migrations (if schema changed)
+pnpm --filter='./packages/backend' db:generate
+
+# Run migrations
+pnpm run db:migrate
+```
+
+3. Start the backend:
+
+```bash
+pnpm run dev:backend
+```
+
+### Frontend Setup
+
+1. Create a `.env` file in `packages/frontend/`:
+
+```env
+VITE_API_URL=http://localhost:3021
+VITE_USE_LOCAL_SERVER=1
+```
+
+2. Start the frontend:
+
+```bash
+pnpm run dev:frontend
+```
+
+## Available Scripts
+
+```bash
+# Development
+pnpm run dev              # Run all packages in dev mode
+pnpm run dev:frontend     # Run frontend only
+pnpm run dev:backend      # Run backend only
+
+# Building
+pnpm run build            # Build all packages
+pnpm run build:frontend   # Build frontend only
+pnpm run build:backend    # Build backend only
+
+# Testing
+pnpm run test             # Run all tests
+pnpm run test:frontend    # Run frontend tests
+pnpm run test:backend     # Run backend tests
+
+# Code Quality
+pnpm run typecheck        # Type check all packages
+pnpm run lint             # Lint all packages
+pnpm run format           # Format code with Prettier
+pnpm run format:check     # Check code formatting
+
+# Database
+pnpm run db:migrate       # Run database migrations
+pnpm run db:seed          # Seed database with sample data
+
+# Cleanup
+pnpm run clean            # Remove build artifacts and node_modules
+```
+
+## Project Status
+
+This is a modern rewrite in progress. The following has been completed:
+
+✅ Workspace structure with pnpm workspaces  
+✅ Shared package with TypeScript types  
+✅ Backend with Fastify, Drizzle ORM, Socket.IO v4  
+✅ Frontend structure with Vite, React 18, Zustand  
+✅ API routes with Zod validation  
+✅ WebSocket support for real-time events  
+✅ Docker Compose setup for development and production  
+✅ Comprehensive API documentation
+
+## Documentation
+
+- [Technical Specification](./TECHNICAL_SPEC_REWRITE.md)
+- [Docker Setup Guide](./DOCKER.md)
+- [Backend README](./packages/backend/README.md)
+- [Frontend README](./packages/frontend/README.md)
+- [Shared Package README](./packages/shared/README.md)
