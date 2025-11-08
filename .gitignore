@@ -44,6 +44,9 @@ coverage/
 *.sqlite
 *.sqlite3
 
+# SQL Migrations
+packages/backend/sql/migrations/
+
 # Package manager lock files (keep bun.lockb)
 package-lock.json
 yarn.lock

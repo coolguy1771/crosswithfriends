@@ -3,7 +3,7 @@ name: Deploy
 on:
   push:
     branches:
-      - main
+      - master
       - develop
   workflow_dispatch:
     inputs:
@@ -33,7 +33,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          elif [ "${{ github.ref }}" == "refs/heads/master" ]; then
             echo "environment=production" >> $GITHUB_OUTPUT
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             echo "environment=staging" >> $GITHUB_OUTPUT
@@ -87,7 +87,7 @@ jobs:
           
           BACKEND_TAGS="ghcr.io/${{ github.repository }}/backend:${ENV}-${SHORT_SHA}"
           
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          if [ "${{ github.ref }}" == "refs/heads/master" ]; then
             BACKEND_TAGS="${BACKEND_TAGS},ghcr.io/${{ github.repository }}/backend:latest,ghcr.io/${{ github.repository }}/backend:production"
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             BACKEND_TAGS="${BACKEND_TAGS},ghcr.io/${{ github.repository }}/backend:staging"
@@ -128,7 +128,7 @@ jobs:
           
           FRONTEND_TAGS="ghcr.io/${{ github.repository }}/frontend:${ENV}-${SHORT_SHA}"
           
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+          if [ "${{ github.ref }}" == "refs/heads/master" ]; then
             FRONTEND_TAGS="${FRONTEND_TAGS},ghcr.io/${{ github.repository }}/frontend:latest,ghcr.io/${{ github.repository }}/frontend:production"
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             FRONTEND_TAGS="${FRONTEND_TAGS},ghcr.io/${{ github.repository }}/frontend:staging"
