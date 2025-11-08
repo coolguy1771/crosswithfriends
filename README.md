@@ -33,7 +33,7 @@ Modern rewrite of the CrossWithFriends backend and frontend with a monorepo work
 
 ## Workspace Structure
 
-```
+```text
 packages/
 ├── shared/     # Shared TypeScript types and utilities
 ├── backend/    # Fastify backend server
@@ -47,7 +47,7 @@ packages/
 - Node.js 20+ (LTS recommended)
 - pnpm 9.0+ (`npm install -g pnpm` or `corepack enable`)
 - PostgreSQL 15+ (or use Docker Compose)
-- Redis 7+ (optional, for horizontal scaling and distributed rate limiting)
+- Valkey 7+ (optional, for horizontal scaling and distributed rate limiting)
 
 ### Installation
 
@@ -73,7 +73,7 @@ The easiest way to get started is using Docker Compose for the database:
 
 ```bash
 # Start PostgreSQL database
-docker-compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yaml up -d
 
 # Run database migrations
 pnpm run db:migrate
@@ -82,8 +82,6 @@ pnpm run db:migrate
 pnpm run dev:backend
 pnpm run dev:frontend
 ```
-
-For more Docker options, see [DOCKER.md](./DOCKER.md).
 
 ### Backend Setup
 
@@ -163,23 +161,8 @@ pnpm run db:seed          # Seed database with sample data
 pnpm run clean            # Remove build artifacts and node_modules
 ```
 
-## Project Status
-
-This is a modern rewrite in progress. The following has been completed:
-
-✅ Workspace structure with pnpm workspaces  
-✅ Shared package with TypeScript types  
-✅ Backend with Fastify, Drizzle ORM, Socket.IO v4  
-✅ Frontend structure with Vite, React 18, Zustand  
-✅ API routes with Zod validation  
-✅ WebSocket support for real-time events  
-✅ Docker Compose setup for development and production  
-✅ Comprehensive API documentation
-
 ## Documentation
 
-- [Technical Specification](./TECHNICAL_SPEC_REWRITE.md)
-- [Docker Setup Guide](./DOCKER.md)
 - [Backend README](./packages/backend/README.md)
 - [Frontend README](./packages/frontend/README.md)
 - [Shared Package README](./packages/shared/README.md)

@@ -2,7 +2,7 @@ import type {FastifyInstance, FastifyPluginOptions} from 'fastify';
 import {z} from 'zod';
 import {RoomEventRepository} from '../../../repositories';
 import {RoomService} from '../../../services';
-import type {RoomId} from '@crosswithfriends/shared';
+import type {RoomId, CreateRoomRequest} from '@crosswithfriends/shared';
 import {NotFoundError} from '../../../lib/errors.js';
 
 const createRoomSchema = z.object({
@@ -23,9 +23,11 @@ export default function roomsRouter(app: FastifyInstance, _options: FastifyPlugi
     Body: z.infer<typeof createRoomSchema>;
   }>('/', async (request, reply) => {
     const validated = createRoomSchema.parse(request.body);
-    const result = await roomService.createRoom({
-      ...(validated.rid !== undefined ? {rid: validated.rid} : {}),
-    });
+    const payload: CreateRoomRequest = {};
+    if (validated.rid !== undefined) {
+      payload.rid = validated.rid as RoomId;
+    }
+    const result = await roomService.createRoom(payload);
     return reply.status(201).send(result);
   });
 

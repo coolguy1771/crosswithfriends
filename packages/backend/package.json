@@ -8,7 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "pnpm --filter=@crosswithfriends/shared build && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",

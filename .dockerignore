@@ -24,6 +24,3 @@ README.md
 coverage
 .nyc_output
 .bun
-bun.lockb
-yarn.lock
-package-lock.json

@@ -65,6 +65,12 @@ jobs:
           psql -h localhost -U postgres -c "DROP DATABASE IF EXISTS dfac_test;"
           psql -h localhost -U postgres -c "CREATE DATABASE dfac_test;"
 
+      - name: Generate database migrations
+        working-directory: packages/backend
+        env:
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/dfac_test
+        run: pnpm run db:generate
+
       - name: Check migration files format
         working-directory: packages/backend
         run: |
@@ -86,6 +92,33 @@ jobs:
 
           echo "All migration files follow the correct format."
 
+      - name: Check for SQL syntax errors
+        working-directory: packages/backend
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: password
+          PGDATABASE: dfac_test
+        run: |
+          echo "Checking SQL syntax in migration files..."
+          MIGRATION_DIR="./sql/migrations"
+
+          for file in "$MIGRATION_DIR"/*.sql; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+              echo "Checking syntax for: $filename"
+              # Validate SQL syntax in a transaction that rolls back
+              # This checks syntax without committing any changes
+              # Wrap the file content in BEGIN/ROLLBACK to test syntax safely
+              if ! (echo "BEGIN;" && cat "$file" && echo "ROLLBACK;") | psql -h localhost -U postgres -d dfac_test >/dev/null 2>&1; then
+                echo "ERROR: SQL syntax error in $filename"
+                exit 1
+              fi
+              echo "✓ Syntax valid: $filename"
+            fi
+          done
+
       - name: Test migrations up
         working-directory: packages/backend
         env:
@@ -104,32 +137,6 @@ jobs:
         run: |
           echo "Verifying migration tracking..."
           psql -h localhost -U postgres -d dfac_test -c "SELECT hash, created_at FROM drizzle_migrations ORDER BY created_at;"
-
-      - name: Check for SQL syntax errors
-        working-directory: packages/backend
-        env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: password
-          PGDATABASE: dfac_test
-        run: |
-          echo "Checking SQL syntax in migration files..."
-          MIGRATION_DIR="./sql/migrations"
-
-          for file in "$MIGRATION_DIR"/*.sql; do
-            if [ -f "$file" ]; then
-              filename=$(basename "$file")
-              echo "Checking syntax for: $filename"
-              # Use psql to validate SQL syntax without executing
-              if ! psql -h localhost -U postgres -d dfac_test -f "$file" --dry-run 2>/dev/null; then
-                # Try basic syntax check
-                if psql -h localhost -U postgres -d dfac_test -c "\i $file" 2>&1 | grep -i "error"; then
-                  echo "WARNING: Potential syntax issues in $filename (this may be a false positive)"
-                fi
-              fi
-            fi
-          done
 
       - name: Migration summary
         if: always()

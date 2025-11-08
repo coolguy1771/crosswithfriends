@@ -5,27 +5,34 @@ import {PuzzleRepository} from '../../../repositories';
 import {PuzzleService} from '../../../services';
 
 // Zod schemas for validation
-const addPuzzleSchema = z.object({
-  puzzle: z.object({
-    grid: z.array(z.array(z.string())),
-    solution: z.array(z.array(z.string())),
-    info: z.object({
-      type: z.string().optional(),
-      title: z.string(),
-      author: z.string(),
-      copyright: z.string().optional(),
-      description: z.string().optional(),
-    }),
-    circles: z.array(z.string()).optional(),
-    shades: z.array(z.string()).optional(),
-    clues: z.object({
-      across: z.array(z.string()),
-      down: z.array(z.string()),
-    }),
-    private: z.boolean().optional(),
+const puzzleContentSchema = z.object({
+  grid: z.array(z.array(z.string())),
+  solution: z.array(z.array(z.string())),
+  info: z.object({
+    type: z.string().optional(),
+    title: z.string(),
+    author: z.string(),
+    copyright: z.string().optional(),
+    description: z.string().optional(),
   }),
+  circles: z.array(z.string()).optional(),
+  shades: z.array(z.string()).optional(),
+  clues: z.object({
+    across: z.array(z.string()),
+    down: z.array(z.string()),
+  }),
+  private: z.boolean().optional(),
+});
+
+const addPuzzleSchema = z.object({
+  puzzle: puzzleContentSchema,
   pid: z.string().optional(),
   isPublic: z.boolean(),
+});
+
+const updatePuzzleSchema = z.object({
+  content: puzzleContentSchema.optional(),
+  isPublic: z.boolean().optional(),
 });
 
 const listPuzzlesSchema = z.object({
@@ -147,37 +154,49 @@ export default function puzzlesRouter(app: FastifyInstance, _options: FastifyPlu
   // PUT /api/v1/puzzles/:pid - Update puzzle
   app.put<{
     Params: {pid: string};
-    Body: {
-      content?: z.infer<typeof addPuzzleSchema>['puzzle'];
-      isPublic?: boolean;
-    };
+    Body: z.infer<typeof updatePuzzleSchema>;
   }>('/:pid', async (request, reply) => {
     const {pid} = request.params;
+
+    // Validate request body before accessing nested properties
+    const parseResult = updatePuzzleSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request body',
+          details: parseResult.error.issues,
+          requestId: request.id,
+        },
+      });
+    }
+
+    const validated = parseResult.data;
     const updates: Partial<{content: PuzzleJson; isPublic: boolean}> = {};
 
-    if (request.body.content !== undefined) {
+    if (validated.content !== undefined) {
       // Build info object excluding undefined values to satisfy exactOptionalPropertyTypes
       const info: InfoJson = {
-        title: request.body.content.info.title,
-        author: request.body.content.info.author,
-        copyright: request.body.content.info.copyright ?? '',
-        description: request.body.content.info.description ?? '',
-        ...(request.body.content.info.type !== undefined ? {type: request.body.content.info.type} : {}),
+        title: validated.content.info.title,
+        author: validated.content.info.author,
+        copyright: validated.content.info.copyright ?? '',
+        description: validated.content.info.description ?? '',
+        ...(validated.content.info.type !== undefined ? {type: validated.content.info.type} : {}),
       };
       // Build puzzle content ensuring circles and shades are always arrays
       const content: PuzzleJson = {
-        grid: request.body.content.grid,
-        solution: request.body.content.solution,
+        grid: validated.content.grid,
+        solution: validated.content.solution,
         info,
-        circles: request.body.content.circles ?? [],
-        shades: request.body.content.shades ?? [],
-        clues: request.body.content.clues,
-        ...(request.body.content.private !== undefined ? {private: request.body.content.private} : {}),
+        circles: validated.content.circles ?? [],
+        shades: validated.content.shades ?? [],
+        clues: validated.content.clues,
+        ...(validated.content.private !== undefined ? {private: validated.content.private} : {}),
       };
       updates.content = content;
     }
-    if (request.body.isPublic !== undefined) {
-      updates.isPublic = request.body.isPublic;
+    if (validated.isPublic !== undefined) {
+      updates.isPublic = validated.isPublic;
     }
 
     const success = await puzzleService.updatePuzzle(pid, updates);

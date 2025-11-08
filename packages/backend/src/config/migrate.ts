@@ -64,7 +64,7 @@ export async function runMigrations(): Promise<void> {
     const MIGRATION_LOCK_KEY = 1234567890;
     let lockAcquired = false;
     try {
-      const result = await migrationClient`
+      const result = await migrationClient<[{acquired: boolean}]>`
         SELECT pg_try_advisory_lock(${MIGRATION_LOCK_KEY}) as acquired
       `;
       lockAcquired = result[0]?.acquired ?? false;

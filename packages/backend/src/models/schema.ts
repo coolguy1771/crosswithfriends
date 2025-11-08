@@ -50,15 +50,19 @@ export const gameSnapshots = pgTable('game_snapshots', {
 });
 
 // Puzzle Solves table
-export const puzzleSolves = pgTable('puzzle_solves', {
-  id: text('id').primaryKey(),
-  pid: text('pid').notNull(),
-  gid: text('gid').notNull(),
-  solvedAt: timestamp('solved_at', {withTimezone: true}).notNull().defaultNow(),
-  timeTakenSeconds: integer('time_taken_seconds').notNull(),
-  revealedSquaresCount: integer('revealed_squares_count').default(0),
-  checkedSquaresCount: integer('checked_squares_count').default(0),
-});
+export const puzzleSolves = pgTable(
+  'puzzle_solves',
+  {
+    id: text('id').primaryKey(),
+    pid: text('pid').notNull(),
+    gid: text('gid').notNull(),
+    solvedAt: timestamp('solved_at', {withTimezone: true}).notNull().defaultNow(),
+    timeTakenSeconds: integer('time_taken_seconds').notNull(),
+    revealedSquaresCount: integer('revealed_squares_count').default(0),
+    checkedSquaresCount: integer('checked_squares_count').default(0),
+  },
+  (table) => [uniqueIndex('puzzle_solves_pid_gid_unique').on(table.pid, table.gid)]
+);
 
 // Room Events table
 export const roomEvents = pgTable(

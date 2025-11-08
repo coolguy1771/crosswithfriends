@@ -123,6 +123,12 @@ jobs:
           psql -h localhost -U postgres -c "DROP DATABASE IF EXISTS dfac_test;"
           psql -h localhost -U postgres -c "CREATE DATABASE dfac_test;"
 
+      - name: Generate database migrations
+        working-directory: packages/backend
+        env:
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/dfac_test
+        run: pnpm run db:generate
+
       - name: Run database migrations
         working-directory: packages/backend
         env:
@@ -262,7 +268,7 @@ jobs:
 
       - name: Check for known vulnerabilities
         run: |
-          if pnpm audit --audit-level=high --json | grep -q '"vulnerabilities"'; then
+          if [ "$(pnpm audit --audit-level=high --json | jq -r '.metadata.vulnerabilities.high // 0')" -gt 0 ]; then
             echo "High severity vulnerabilities found!"
             exit 1
           fi

@@ -13,10 +13,19 @@ export default function oembedRouter(app: FastifyInstance, _options: FastifyPlug
     const validated = oembedQuerySchema.parse(request.query);
 
     // https://oembed.com/#section2.3
-    return reply.send({
+    const response: {
+      type: string;
+      version: string;
+      author_name?: string;
+    } = {
       type: 'link',
       version: '1.0',
-      author_name: validated.author,
-    });
+    };
+
+    if (validated.author) {
+      response.author_name = validated.author;
+    }
+
+    return reply.send(response);
   });
 }

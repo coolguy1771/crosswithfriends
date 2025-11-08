@@ -25,13 +25,13 @@ export function getRedisClient(): Redis {
 
     redisClient.on('error', (err) => {
       // Only log errors, don't throw - app should continue without Redis if needed
-      if (process.env.NODE_ENV !== 'test') {
+      if (env.NODE_ENV !== 'test') {
         console.error('Redis Client Error:', err);
       }
     });
 
     redisClient.on('connect', () => {
-      if (process.env.NODE_ENV !== 'test') {
+      if (env.NODE_ENV !== 'test') {
         // eslint-disable-next-line no-console
         console.log('Redis Client Connected');
       }
