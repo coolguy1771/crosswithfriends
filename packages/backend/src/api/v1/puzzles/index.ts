@@ -47,57 +47,59 @@ const listPuzzlesSchema = z.object({
   pageSize: z.coerce.number().int().positive().max(100),
 });
 
+/**
+ * Builds a PuzzleJson from validated puzzle content.
+ * Handles optional fields and provides defaults for circles/shades and copyright/description.
+ */
+function buildPuzzleJson(validatedContent: z.infer<typeof puzzleContentSchema>): PuzzleJson {
+  // Build info object excluding undefined values to satisfy exactOptionalPropertyTypes
+  const info: InfoJson = {
+    title: validatedContent.info.title,
+    author: validatedContent.info.author,
+    copyright: validatedContent.info.copyright ?? '',
+    description: validatedContent.info.description ?? '',
+    ...(validatedContent.info.type !== undefined ? {type: validatedContent.info.type} : {}),
+  };
+  // Build puzzle object ensuring circles and shades are always arrays
+  const puzzle: PuzzleJson = {
+    grid: validatedContent.grid,
+    solution: validatedContent.solution,
+    info,
+    circles: validatedContent.circles ?? [],
+    shades: validatedContent.shades ?? [],
+    clues: validatedContent.clues,
+    ...(validatedContent.private !== undefined ? {private: validatedContent.private} : {}),
+  };
+  return puzzle;
+}
+
 export default function puzzlesRouter(app: FastifyInstance, _options: FastifyPluginOptions) {
   // Initialize services
   const puzzleRepo = new PuzzleRepository();
   const puzzleService = new PuzzleService(puzzleRepo);
 
-  // Type for parsed query parameters
-  type ParsedQuery = {
-    page?: string | number;
-    pageSize?: string | number;
-    filter?: {
-      sizeFilter?: {
-        Mini?: string | boolean;
-        Standard?: string | boolean;
-      };
-      nameOrTitleFilter?: string;
-    };
-    [key: string]: unknown;
-  };
-
   // GET /api/v1/puzzles - List puzzles
   app.get<{
     Querystring: Record<string, unknown>;
   }>('/', async (request, reply) => {
-    // Parse nested query parameters from flat format
-    // Frontend sends: filter[sizeFilter][Mini]=true, filter[sizeFilter][Standard]=true, etc.
-    const query = request.query;
+    // Fastify parses nested query parameters automatically
+    // Build parsedQuery directly from request.query assuming nested structure
+    const parsedQuery = request.query;
 
-    // Check if Fastify already parsed it as nested object, or if it's flat
-    let parsedQuery: ParsedQuery;
-
-    if (query.filter && typeof query.filter === 'object') {
-      // Already parsed as nested object
-      parsedQuery = query;
-    } else {
-      // Parse from flat format
-      parsedQuery = {
-        page: query.page ? Number(query.page) : 1,
-        pageSize: query.pageSize ? Number(query.pageSize) : 20,
-        filter: {
-          sizeFilter: {
-            Mini: query['filter[sizeFilter][Mini]'] === 'true' || query['filter[sizeFilter][Mini]'] === true,
-            Standard:
-              query['filter[sizeFilter][Standard]'] === 'true' ||
-              query['filter[sizeFilter][Standard]'] === true,
-          },
-          nameOrTitleFilter: (query['filter[nameOrTitleFilter]'] as string) || '',
+    // Validate with safeParse to handle validation errors gracefully
+    const parseResult = listPuzzlesSchema.safeParse(parsedQuery);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid query parameters',
+          details: parseResult.error.issues,
+          requestId: request.id,
         },
-      };
+      });
     }
 
-    const validated = listPuzzlesSchema.parse(parsedQuery);
+    const validated = parseResult.data;
     const result = await puzzleService.listPuzzles(validated);
     return reply.send(result);
   });
@@ -124,25 +126,21 @@ export default function puzzlesRouter(app: FastifyInstance, _options: FastifyPlu
   app.post<{
     Body: z.infer<typeof addPuzzleSchema>;
   }>('/', async (request, reply) => {
-    const validated = addPuzzleSchema.parse(request.body);
-    // Build info object excluding undefined values to satisfy exactOptionalPropertyTypes
-    const info: InfoJson = {
-      title: validated.puzzle.info.title,
-      author: validated.puzzle.info.author,
-      copyright: validated.puzzle.info.copyright ?? '',
-      description: validated.puzzle.info.description ?? '',
-      ...(validated.puzzle.info.type !== undefined ? {type: validated.puzzle.info.type} : {}),
-    };
-    // Build puzzle object ensuring circles and shades are always arrays
-    const puzzle: PuzzleJson = {
-      grid: validated.puzzle.grid,
-      solution: validated.puzzle.solution,
-      info,
-      circles: validated.puzzle.circles ?? [],
-      shades: validated.puzzle.shades ?? [],
-      clues: validated.puzzle.clues,
-      ...(validated.puzzle.private !== undefined ? {private: validated.puzzle.private} : {}),
-    };
+    // Validate request body before accessing nested properties
+    const parseResult = addPuzzleSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request body',
+          details: parseResult.error.issues,
+          requestId: request.id,
+        },
+      });
+    }
+
+    const validated = parseResult.data;
+    const puzzle = buildPuzzleJson(validated.puzzle);
     const result = await puzzleService.createPuzzle({
       puzzle,
       ...(validated.pid !== undefined ? {pid: validated.pid} : {}),
@@ -175,25 +173,7 @@ export default function puzzlesRouter(app: FastifyInstance, _options: FastifyPlu
     const updates: Partial<{content: PuzzleJson; isPublic: boolean}> = {};
 
     if (validated.content !== undefined) {
-      // Build info object excluding undefined values to satisfy exactOptionalPropertyTypes
-      const info: InfoJson = {
-        title: validated.content.info.title,
-        author: validated.content.info.author,
-        copyright: validated.content.info.copyright ?? '',
-        description: validated.content.info.description ?? '',
-        ...(validated.content.info.type !== undefined ? {type: validated.content.info.type} : {}),
-      };
-      // Build puzzle content ensuring circles and shades are always arrays
-      const content: PuzzleJson = {
-        grid: validated.content.grid,
-        solution: validated.content.solution,
-        info,
-        circles: validated.content.circles ?? [],
-        shades: validated.content.shades ?? [],
-        clues: validated.content.clues,
-        ...(validated.content.private !== undefined ? {private: validated.content.private} : {}),
-      };
-      updates.content = content;
+      updates.content = buildPuzzleJson(validated.content);
     }
     if (validated.isPublic !== undefined) {
       updates.isPublic = validated.isPublic;

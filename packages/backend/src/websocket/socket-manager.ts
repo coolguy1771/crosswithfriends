@@ -39,15 +39,14 @@ function sanitizeGameEvent(event: GameEvent): GameEvent {
   const sanitized = JSON.parse(JSON.stringify(event)) as GameEvent;
 
   // Remove solution from CreateGameEvent.params.game (server-only data)
-  if (
-    sanitized.type === 'create' &&
-    'params' in sanitized &&
-    sanitized.params &&
-    typeof sanitized.params === 'object'
-  ) {
+  if (sanitized.type === 'create' && 'params' in sanitized) {
     const params = sanitized.params as unknown as {game?: {solution?: unknown; [key: string]: unknown}};
-    if (params.game && typeof params.game === 'object' && 'solution' in params.game) {
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    if (
+      typeof params === 'object' &&
+      params.game &&
+      typeof params.game === 'object' &&
+      'solution' in params.game
+    ) {
       delete params.game.solution;
     }
   }

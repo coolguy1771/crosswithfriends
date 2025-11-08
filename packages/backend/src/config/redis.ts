@@ -6,6 +6,17 @@ let redisClient: Redis | null = null;
 export function getRedisClient(): Redis {
   if (!redisClient) {
     const env = getEnv();
+
+    // Require REDIS_URL in non-development environments
+    if (env.NODE_ENV !== 'development' && env.NODE_ENV !== 'test') {
+      if (!env.REDIS_URL) {
+        throw new Error(
+          'REDIS_URL environment variable is required in non-development environments. ' +
+            'Please set REDIS_URL to your Redis connection string (e.g., redis://host:port).'
+        );
+      }
+    }
+
     const redisUrl = env.REDIS_URL ?? 'redis://localhost:6379';
 
     redisClient = new Redis(redisUrl, {

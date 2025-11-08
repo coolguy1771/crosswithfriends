@@ -156,7 +156,7 @@ jobs:
   deployment-summary:
     name: Deployment Summary
     runs-on: ubuntu-latest
-    needs: [determine-environment, detect-changes]
+    needs: [determine-environment, detect-changes, build-and-push-backend, build-and-push-frontend]
     if: always()
     steps:
       - name: Output deployment summary
@@ -172,18 +172,23 @@ jobs:
           echo "- Frontend: ${{ needs.detect-changes.outputs.frontend }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ needs.detect-changes.outputs.backend }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "### Backend Image" >> $GITHUB_STEP_SUMMARY
-            echo "✅ Built and pushed (linux/amd64, linux/arm64)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "### Backend Image" >> $GITHUB_STEP_SUMMARY
+          echo "### Backend Image" >> $GITHUB_STEP_SUMMARY
+          BACKEND_RESULT="${{ needs.build-and-push-backend.result }}"
+          if [ "$BACKEND_RESULT" == "success" ]; then
+            echo "✅ Built and pushed (platform info unavailable)" >> $GITHUB_STEP_SUMMARY
+          elif [ "$BACKEND_RESULT" == "skipped" ]; then
             echo "⏭️ Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Build or push failed" >> $GITHUB_STEP_SUMMARY
           fi
 
-          if [ "${{ needs.detect-changes.outputs.frontend }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "### Frontend Image" >> $GITHUB_STEP_SUMMARY
-            echo "✅ Built and pushed (linux/amd64, linux/arm64)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "### Frontend Image" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Frontend Image" >> $GITHUB_STEP_SUMMARY
+          FRONTEND_RESULT="${{ needs.build-and-push-frontend.result }}"
+          if [ "$FRONTEND_RESULT" == "success" ]; then
+            echo "✅ Built and pushed (platform info unavailable)" >> $GITHUB_STEP_SUMMARY
+          elif [ "$FRONTEND_RESULT" == "skipped" ]; then
             echo "⏭️ Skipped (no changes)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Build or push failed" >> $GITHUB_STEP_SUMMARY
           fi

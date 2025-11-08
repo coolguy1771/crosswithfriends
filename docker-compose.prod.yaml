@@ -1,0 +1,80 @@
+---
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: crosswithfriends-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-dfac}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/18/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crosswithfriends-network
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:9-alpine
+    container_name: crosswithfriends-valkey
+    ports:
+      - '${VALKEY_PORT:-6379}:6379'
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ['CMD', 'valkey-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - crosswithfriends-network
+    restart: unless-stopped
+
+  backend:
+    image: ${BACKEND_IMAGE:-crosswithfriends-backend:latest}
+    container_name: crosswithfriends-backend
+    environment:
+      NODE_ENV: production
+      PORT: ${BACKEND_PORT:-3021}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/dfac}
+      REDIS_URL: ${REDIS_URL:-redis://valkey:6379}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3020}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - '${BACKEND_PORT:-3021}:3021'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    networks:
+      - crosswithfriends-network
+    restart: unless-stopped
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-crosswithfriends-frontend:latest}
+    container_name: crosswithfriends-frontend
+    environment:
+      - NGINX_HOST=${FRONTEND_HOST:-localhost}
+      - NGINX_PORT=80
+    ports:
+      - '${FRONTEND_PORT:-3020}:80'
+    depends_on:
+      - backend
+    networks:
+      - crosswithfriends-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  valkey_data:
+
+networks:
+  crosswithfriends-network:
+    driver: bridge
