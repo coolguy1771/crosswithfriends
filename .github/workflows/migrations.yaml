@@ -119,24 +119,11 @@ jobs:
             fi
           done
 
-      - name: Test migrations up
+      - name: Run database migrations
         working-directory: packages/backend
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/dfac_test
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: password
-          PGDATABASE: dfac_test
-        run: |
-          echo "Testing migrations up using custom migration runner..."
-          # Use the same migration runner that the application uses at runtime
-          tsx src/scripts/migrate.ts || {
-            echo "ERROR: Migration command failed"
-            echo "Checking database connection..."
-            psql -h localhost -U postgres -d dfac_test -c "SELECT version();" || echo "Database connection failed"
-            exit 1
-          }
+        run: pnpm run db:migrate
 
       - name: Verify migrations applied successfully
         env:
