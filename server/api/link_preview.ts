@@ -3,7 +3,7 @@ import _ from 'lodash';
 
 import {InfoJson} from '@shared/types';
 import {getGameInfo} from '../model/game';
-import {islinkExpanderBot, isFBMessengerCrawler} from '../utils/link_preview_util';
+import {isLinkExpanderBot, isFBMessengerCrawler} from '../utils/link_preview_util';
 import {getPuzzleInfo} from '../model/puzzle';
 import {createHttpError} from './errors';
 
@@ -40,32 +40,40 @@ async function linkPreviewRouter(fastify: FastifyInstance) {
         throw createHttpError('Game or puzzle not found', 404);
       }
 
-      const ua = request.headers['user-agent'] as string;
+      const ua = request.headers['user-agent'] as string | undefined;
 
-      if (!islinkExpanderBot(ua)) {
+      if (!isLinkExpanderBot(ua)) {
         // In case a human accesses this endpoint
-        return reply.redirect(url.href);
+        return reply.code(302).header('Location', url.href).send();
       }
 
       // OGP doesn't support an author property, so we need to delegate to the oEmbed endpoint
-      const protocol = request.protocol;
+      // Construct oembed URL - default to https (protocol detection not critical for oembed link)
       const host = request.headers.host || '';
-      const oembedEndpointUrl = `${protocol}://${host}/api/oembed?author=${encodeURIComponent(info.author)}`;
+      const author = info.author || '';
+      // Use https as default - oembed links work with either protocol
+      const protocol = 'https';
+      const oembedEndpointUrl = `${protocol}://${host}/api/oembed?author=${encodeURIComponent(author)}`;
 
       // Messenger only supports title + thumbnail, so cram everything into the title property if Messenger
       const titlePropContent = isFBMessengerCrawler(ua)
         ? [info.title, info.author, info.description].filter(Boolean).join(' | ')
-        : info.title;
+        : info.title || '';
+
+      // Ensure all template variables are safe
+      const safeTitle = titlePropContent || '';
+      const safeDescription = info.description || '';
+      const safeUrl = url.href || '';
 
       // https://ogp.me
       return reply.type('text/html').send(String.raw`
         <html prefix="og: https://ogp.me/ns/website#">
             <head>
-                <title>${titlePropContent}</title>
-                <meta property="og:title" content="${titlePropContent}" />
+                <title>${safeTitle}</title>
+                <meta property="og:title" content="${safeTitle}" />
                 <meta property="og:type" content="website" />
-                <meta property="og:url" content="${url.href}" />
-                <meta property="og:description" content="${info.description}" />
+                <meta property="og:url" content="${safeUrl}" />
+                <meta property="og:description" content="${safeDescription}" />
                 <meta property="og:site_name" content="downforacross.com" />
                 <link type="application/json+oembed" href=${oembedEndpointUrl} />
                 <meta name="theme-color" content="#6aa9f4">

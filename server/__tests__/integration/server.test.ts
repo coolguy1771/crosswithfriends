@@ -191,7 +191,7 @@ describe('Server Integration Tests', () => {
         url: '/api/oembed?author=Test',
         headers: {
           'user-agent': 'test-agent',
-          'accept': 'application/json',
+          accept: 'application/json',
         },
       });
 

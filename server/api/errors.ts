@@ -7,4 +7,3 @@ export function createHttpError(message: string, statusCode: number): Error & {s
   error.statusCode = statusCode;
   return error;
 }
-

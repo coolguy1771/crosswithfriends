@@ -9,11 +9,11 @@ vi.mock('../../model/game');
 vi.mock('../../model/puzzle');
 
 // Mock the utility functions
-const mockIslinkExpanderBot = vi.fn((ua: string) => ua === 'bot' || ua === 'messenger');
+const mockIsLinkExpanderBot = vi.fn((ua: string) => ua === 'bot' || ua === 'messenger');
 const mockIsFBMessengerCrawler = vi.fn((ua: string) => ua === 'messenger');
 
 vi.mock('../../utils/link_preview_util', () => ({
-  islinkExpanderBot: (ua: string) => mockIslinkExpanderBot(ua),
+  isLinkExpanderBot: (ua: string) => mockIsLinkExpanderBot(ua),
   isFBMessengerCrawler: (ua: string) => mockIsFBMessengerCrawler(ua),
 }));
 
@@ -32,7 +32,7 @@ describe('Link Preview API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset mock functions to default behavior
-    mockIslinkExpanderBot.mockImplementation((ua: string) => ua === 'bot' || ua === 'messenger');
+    mockIsLinkExpanderBot.mockImplementation((ua: string) => ua === 'bot' || ua === 'messenger');
     mockIsFBMessengerCrawler.mockImplementation((ua: string) => ua === 'messenger');
   });
 
@@ -159,7 +159,7 @@ describe('Link Preview API', () => {
         description: 'Test Description',
       };
 
-      mockIslinkExpanderBot.mockReturnValue(true);
+      mockIsLinkExpanderBot.mockReturnValue(true);
       mockIsFBMessengerCrawler.mockReturnValue(true);
       (gameModel.getGameInfo as Mock).mockResolvedValue(mockGameInfo);
 
@@ -185,7 +185,7 @@ describe('Link Preview API', () => {
         description: 'Test Description',
       };
 
-      mockIslinkExpanderBot.mockReturnValue(false);
+      mockIsLinkExpanderBot.mockReturnValue(false);
       (gameModel.getGameInfo as Mock).mockResolvedValue(mockGameInfo);
 
       const response = await app.inject({
@@ -202,7 +202,7 @@ describe('Link Preview API', () => {
     it('should handle empty info object', async () => {
       const mockUrl = 'https://example.com/game/test-gid';
 
-      mockIslinkExpanderBot.mockReturnValue(true);
+      mockIsLinkExpanderBot.mockReturnValue(true);
       (gameModel.getGameInfo as Mock).mockResolvedValue({});
 
       const response = await app.inject({
@@ -227,7 +227,7 @@ describe('Link Preview API', () => {
         description: 'Test Description',
       };
 
-      mockIslinkExpanderBot.mockReturnValue(true);
+      mockIsLinkExpanderBot.mockReturnValue(true);
       (gameModel.getGameInfo as Mock).mockResolvedValue(mockGameInfo);
 
       const response = await app.inject({
@@ -254,7 +254,7 @@ describe('Link Preview API', () => {
         description: 'Puzzle Description',
       };
 
-      mockIslinkExpanderBot.mockReturnValue(true);
+      mockIsLinkExpanderBot.mockReturnValue(true);
       (puzzleModel.getPuzzleInfo as Mock).mockResolvedValue(mockPuzzleInfo);
 
       const response = await app.inject({
